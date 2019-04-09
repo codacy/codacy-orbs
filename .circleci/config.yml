@@ -17,6 +17,7 @@ workflows:
       # pack your orb YAML files to a single orb.yml
       # validate the orb.yml file to ensure it is well-formed
       - orb-tools/pack:
+          context: CodacyCircleCI
           requires:
             - orb-tools/lint
 
@@ -26,6 +27,7 @@ workflows:
       # store CIRCLE_TOKEN as a project env var or Contexts resource
       # if using Contexts, add your context below
       - orb-tools/publish-dev:
+          context: CodacyCircleCI
           orb-name: codacy/base
           requires:
             - orb-tools/pack
@@ -36,6 +38,7 @@ workflows:
       # key in CircleCI via SSH Permissions, with github.com as Hostname)
       - orb-tools/trigger-integration-workflow:
           name: trigger-integration-dev
+          context: CodacyCircleCI
           ssh-fingerprints: df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5
           requires:
             - orb-tools/publish-dev
@@ -47,6 +50,7 @@ workflows:
       # the 2nd job (below) may also publish a production orb version
       - orb-tools/trigger-integration-workflow:
           name: trigger-integration-master
+          context: CodacyCircleCI
           ssh-fingerprints: df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5
           tag: master
           requires:
