@@ -1,0 +1,41 @@
+description: >
+  Run a generic Sbt command restoring the cache before and saving it after
+
+parameters:
+  cmd:
+    type: string
+    description: "Sbt command to run"
+
+  save_cache:
+    type: boolean
+    default: true
+    description: "Save the cache after the command is executed"
+
+steps:
+
+  - restore_cache:
+      keys:
+        - sbt-cache-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
+        - sbt-cache-{{ .Branch }}-{{ checksum "build.sbt" }}
+        - sbt-cache-{{ .Branch }}
+        - sbt-cache
+
+  - run:
+      name: Sbt Command - << parameters.cmd >>
+      command: sbt "<< parameters.cmd >>"
+
+  - when:
+      condition: <<parameters.save_cache>>
+      steps:
+        - run:
+            name: CleanCache
+            command: |
+              find $HOME/.sbt -name "*.lock" | xargs rm | true
+              find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
+
+        - save_cache:
+            key: sbt-cache-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
+            paths:
+              - "~/.ivy2/cache"
+              - "~/.sbt"
+              - "~/.m2"

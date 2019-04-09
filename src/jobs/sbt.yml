@@ -1,0 +1,14 @@
+description: "A default sbt job"
+
+executor: machine
+
+parameters:
+  cmd:
+    type: string
+    description: "The Sbt command to run"
+
+steps:
+  - attach_workspace:
+      at: ~/
+  - sbt_cached:
+      cmd: << parameters.cmd >>

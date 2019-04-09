@@ -1,0 +1,33 @@
+description: Checkout and write the version file
+
+parameters:
+
+  write_sbt_version:
+    type: boolean
+    default: false
+    description: If during this step a file version.sbt is written as well
+
+executor: versioning
+
+steps:
+  - checkout
+
+  - run:
+      name: Set version
+      command: /bin/git-version > .version
+
+  - run:
+      name: Current version
+      command: cat .version
+
+  - when:
+      condition: <<parameters.write_sbt_version>>
+      steps:
+        - run:
+            name: Set Sbt version
+            command: echo "version in ThisBuild := \"$(cat .version)\"" > version.sbt
+
+  - persist_to_workspace:
+      root: ~/
+      paths:
+        - workdir/*

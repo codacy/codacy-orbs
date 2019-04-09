@@ -1,0 +1,8 @@
+description: >
+  A docker image to get the version out of Git history
+  https://github.com/codacy/git-version
+
+docker:
+  - image: codacy/git-version:latest
+
+working_directory: ~/workdir
