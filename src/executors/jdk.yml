@@ -1,0 +1,7 @@
+description: >
+  A docker image to use Jdk 8
+
+docker:
+  - image: circleci/openjdk:8-jdk
+
+working_directory: ~/workdir
