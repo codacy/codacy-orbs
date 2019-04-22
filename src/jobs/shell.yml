@@ -1,0 +1,15 @@
+description: "A default job executed in the shell"
+
+executor: machine
+
+parameters:
+  cmd:
+    type: string
+    description: "The shell command to run"
+
+steps:
+  - attach_workspace:
+      at: ~/
+  - run:
+      name: Shell command - << parameters.cmd >>
+      command: << parameters.cmd >>

@@ -1,0 +1,31 @@
+description: An example on how to use the defined jobs
+
+usage:
+  version: 2.1
+  orbs: 
+    jira: codacy/base@dev:alpha
+
+  workflows:
+    example:
+      jobs:
+
+        - codacy/checkout_and_version:
+            write_sbt_version: true
+
+        - codacy/sbt:
+            name: test
+            cmd: ;coverage;test;coverageReport;coverageAggregate;codacyCoverage
+            requires:
+              - codacy/checkout_and_version
+
+        - codacy/shell:
+            name: deploy
+            cmd: make deploy
+            requires:
+              - test
+
+        - codacy/tag_version:
+            name: tag_version
+            context: CodacyAWS
+            requires:
+              - deploy
