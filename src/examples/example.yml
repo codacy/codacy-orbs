@@ -2,7 +2,7 @@ description: An example on how to use the defined jobs
 
 usage:
   version: 2.1
-  orbs: 
+  orbs:
     jira: codacy/base@dev:alpha
 
   workflows:
