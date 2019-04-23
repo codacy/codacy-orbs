@@ -1,0 +1,36 @@
+description: "A shell deploy command to be executed with AWS credentials on the aws executor"
+
+executor: aws
+
+parameters:
+  cmd:
+    type: string
+    description: "The shell command to run"
+
+steps:
+  - attach_workspace:
+      at: ~/
+  - run:
+      name: Setup AWS Credentials
+      command: |
+        mkdir -p ~/.aws && touch ~/.aws/credentials
+        cat >> ~/.aws/credentials \<< EOF
+        [default]
+        aws_access_key_id=$ACCESS_KEY_ID
+        aws_secret_access_key=$SECRET_ACCESS_KEY
+        [integration]
+        source_profile = default
+        role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_INTEGRATION:role/$CONTINUOUS_DELIVERY_ROLE
+        region=eu-west-1
+        [staging]
+        source_profile = default
+        role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_STAGING:role/$CONTINUOUS_DELIVERY_ROLE
+        region=eu-west-1
+        [production]
+        source_profile = default
+        role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$CONTINUOUS_DELIVERY_ROLE
+        region=eu-west-1
+        EOF
+  - deploy:
+      name: AWS deploy command - << parameters.cmd >>
+      command: << parameters.cmd >>
