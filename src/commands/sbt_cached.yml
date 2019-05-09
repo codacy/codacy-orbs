@@ -22,7 +22,7 @@ steps:
 
   - run:
       name: Sbt Command - << parameters.cmd >>
-      command: sbt "<< parameters.cmd >>"
+      command: << parameters.cmd >>
 
   - when:
       condition: <<parameters.save_cache>>
