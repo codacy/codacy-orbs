@@ -30,6 +30,7 @@ steps:
         - run:
             name: CleanCache
             command: |
+              set +eo pipefail
               find $HOME/.sbt -name "*.lock" | xargs rm | true
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
 
