@@ -14,7 +14,7 @@ usage:
 
         - codacy/sbt:
             name: test
-            cmd: ;coverage;test;coverageReport;coverageAggregate;codacyCoverage
+            cmd: sbt ;coverage;test;coverageReport;coverageAggregate;codacyCoverage
             requires:
               - codacy/checkout_and_version
 
