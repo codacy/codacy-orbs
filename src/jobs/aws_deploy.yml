@@ -9,21 +9,30 @@ parameters:
   aws_profile:
     type: string
     description: "The AWS profile to be used"
-  deployment_type:
-    type: string
-    description: "The AWS deployment type"
-  cluster_name:
-    type: string
-    description: "The Cluster name to be used"
+    default: "default"
   region:
     type: string
     description: "The aws region for the deployment"
+    default: eu-west-1
+  credentials_file_content:
+    type: string
+    default: |
+      [default]
+      aws_access_key_id=$ACCESS_KEY_ID
+      aws_secret_access_key=$SECRET_ACCESS_KEY
+      [integration]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_INTEGRATION:role/$CONTINUOUS_DELIVERY_ROLE
+      [staging]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_STAGING:role/$CONTINUOUS_DELIVERY_ROLE
+      [production]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$CONTINUOUS_DELIVERY_ROLE
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
-  DEPLOYMENT_TYPE: << parameters.deployment_type >>
-  CLUSTER_NAME: << parameters.cluster_name >>
-  REGION: << parameters.region >>
+  AWS_DEFAULT_REGION: << parameters.region >>
 
 steps:
   - attach_workspace:
@@ -33,21 +42,7 @@ steps:
       command: |
         mkdir -p ~/.aws && touch ~/.aws/credentials
         cat >> ~/.aws/credentials \<< EOF
-        [default]
-        aws_access_key_id=$ACCESS_KEY_ID
-        aws_secret_access_key=$SECRET_ACCESS_KEY
-        [integration]
-        source_profile = default
-        role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_INTEGRATION:role/$CONTINUOUS_DELIVERY_ROLE
-        region=eu-west-1
-        [staging]
-        source_profile = default
-        role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_STAGING:role/$CONTINUOUS_DELIVERY_ROLE
-        region=eu-west-1
-        [production]
-        source_profile = default
-        role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$CONTINUOUS_DELIVERY_ROLE
-        region=eu-west-1
+        << parameters.credentials_file_content >>
         EOF
   - deploy:
       name: AWS deploy command - << parameters.cmd >>
