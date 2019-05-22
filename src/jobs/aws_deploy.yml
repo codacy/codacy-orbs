@@ -32,7 +32,7 @@ parameters:
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
-  REGION: << parameters.region >>
+  AWS_DEFAULT_REGION: << parameters.region >>
 
 steps:
   - attach_workspace:
