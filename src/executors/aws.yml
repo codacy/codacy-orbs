@@ -2,6 +2,6 @@ description: >
   A docker image to run AWS commands
 
 docker:
-  - image: codacy/ci-aws:3.4.0
+  - image: codacy/ci-aws:3.5.3
 
 working_directory: ~/workdir
