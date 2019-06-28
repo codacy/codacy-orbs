@@ -1,0 +1,53 @@
+description: >
+    "A helm command to be executed, optionally with AWS credentials on the aws executor
+    with kubeconfig created for the provided cluster"
+
+executor: aws
+
+parameters:
+  cmd:
+    type: string
+    description: "The shell command to run"
+  use_cluster:
+    type: boolean
+    description: "Setup kubeconfig for the cluster and run commands targeting it"
+    default: false
+  aws_profile:
+    type: string
+    description: "The AWS profile to be used"
+    default: "default"
+  region:
+    type: string
+    description: "The aws region for the deployment"
+    default: eu-west-1
+  cluster_name:
+    type: string
+    description: "The name of the cluster"
+    default: "codacy-eks-cluster"
+
+environment:
+  AWS_PROFILE: << parameters.aws_profile >>
+  AWS_DEFAULT_REGION: << parameters.region >>
+
+steps:
+  - attach_workspace:
+      at: ~/
+
+  - when:
+      condition: << parameters.use_cluster>>
+      steps:
+        - run_aws:
+            title: Setup kubeconfig context for the cluster
+            cmd: aws eks update-kubeconfig --name << parameters.cluster_name >>
+
+        - run_aws:
+            title: Helm command - << parameters.cmd >>
+            deploy: true
+            cmd: << parameters.cmd >>
+
+  - unless:
+      condition: << parameters.use_cluster>>
+      steps:
+        - run:
+            name: Helm command - << parameters.cmd >>
+            command: << parameters.cmd >>

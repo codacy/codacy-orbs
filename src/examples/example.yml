@@ -3,7 +3,7 @@ description: An example on how to use the defined jobs
 usage:
   version: 2.1
   orbs:
-    jira: codacy/base@dev:alpha
+    codacy: codacy/base@dev:alpha
 
   workflows:
     example:
@@ -29,3 +29,26 @@ usage:
             context: CodacyAWS
             requires:
               - deploy
+
+        - codacy/helm_aws:
+            name: helm_lint
+            cmd: helm lint .helm/some_app
+            requires:
+              - tag_version
+
+        - codacy/helm_push:
+            name: helm_push
+            context: CodacyHelm
+            chart_name: some_app
+            requires:
+              - helm_lint
+
+        - codacy/helm_aws:
+            name: helm_deploy_to_aws_integration
+            use_cluster: true
+            aws_profile: integration
+            cluster_name: my-cluster-name
+            context: CodacyAWS
+            requires:
+              - helm_push
+            cmd: make -C .aws/ all VERSION=$(cat .version)
