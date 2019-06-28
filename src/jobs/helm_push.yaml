@@ -1,0 +1,137 @@
+description: "Set version and publish to chart museum"
+
+executor: aws
+
+parameters:
+  chart_name:
+    type: string
+    description: "name of the helm chart"
+  helm_dir:
+    type: string
+    description: "directory containing the helm chart"
+    default: ".helm"
+  app_version:
+    type: string
+    description: "app version in Chart.yaml"
+    default: ""
+  api_version:
+    type: string
+    description: "api version in Chart.yaml"
+    default: ""
+  chart_version:
+    type: string
+    description: "chart version in Chart.yaml"
+    default: ""
+  image_tag:
+    type: string
+    description: "image tag in values.yaml"
+    default: ""
+  charts_repo_domain_ssm:
+    type: string
+    description: "charts repo domain ssm parameter"
+    default: "/codacy/chartmuseum/DOMAIN"
+  charts_repo_user_ssm:
+    type: string
+    description: "charts repo username ssm parameter"
+    default: "/codacy/chartmuseum/BASIC_AUTH_USER"
+  charts_repo_pass_ssm:
+    type: string
+    description: "charts repo password ssm parameter"
+    default: "/codacy/chartmuseum/BASIC_AUTH_PASS"
+  aws_profile:
+    type: string
+    description: "AWS profile to be used"
+    default: "default"
+  region:
+    type: string
+    description: "aws region for the deployment"
+    default: eu-west-1
+  credentials_file_content:
+    type: string
+    default: |
+      [default]
+      aws_access_key_id=$ACCESS_KEY_ID
+      aws_secret_access_key=$SECRET_ACCESS_KEY
+      [integration]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_INTEGRATION:role/$CONTINUOUS_DELIVERY_ROLE
+      [staging]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_STAGING:role/$CONTINUOUS_DELIVERY_ROLE
+      [production]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$CONTINUOUS_DELIVERY_ROLE
+
+environment:
+  CHART_NAME: << parameters.chart_name >>
+  HELM_DIR: << parameters.helm_dir >>
+  APP_VERSION: << parameters.app_version >>
+  API_VERSION: << parameters.api_version >>
+  CHART_VERSION: << parameters.chart_version >>
+  IMAGE_TAG: << parameters.image_tag >>
+  AWS_PROFILE: << parameters.aws_profile >>
+  AWS_DEFAULT_REGION: << parameters.region >>
+  CHARTS_REPO_USER_SSM: << parameters.charts_repo_user_ssm >>
+  CHARTS_REPO_PASS_SSM: << parameters.charts_repo_pass_ssm >>
+  CHARTS_REPO_SSM: << parameters.charts_repo_domain_ssm >>
+
+steps:
+  - attach_workspace:
+      at: ~/
+  - run:
+      name: Setup AWS Credentials
+      command: |
+        mkdir -p ~/.aws && touch ~/.aws/credentials
+        cat >> ~/.aws/credentials \<< EOF
+        << parameters.credentials_file_content >>
+        EOF
+  - run:
+      name: Set chart and versions, and set image tag
+      command: |
+        function set_value() {
+          local KEY=$1
+          local VALUE=$2
+          local FILE=$3
+          sed -rie "s|(^\s+?${KEY}\s+?:\s+?)(\S+)|\1${VALUE}|g" ${FILE}
+        }
+
+        CHART_FILE="${HELM_DIR}/${CHART_NAME}/Chart.yaml"
+        VALUES_FILE="${HELM_DIR}/${CHART_NAME}/values.yaml"
+
+        if [ -z $APP_VERSION ] ; then
+          APP_VERSION=$(cat .version)
+        fi
+        set_value appVersion ${APP_VERSION} ${CHART_FILE}
+
+        if [ -z $CHART_VERSION ] ; then
+          export CHART_VERSION=$(cat .version)
+        fi
+        set_value version ${CHART_VERSION} ${CHART_FILE}
+
+        if [ ! -z $API_VERSION ] ; then
+          set_value apiVersion ${API_VERSION} ${CHART_FILE}
+        fi
+
+        if [ -z $IMAGE_TAG ] ; then
+          export IMAGE_TAG=$(cat .version)
+        fi
+        set_value tag ${IMAGE_TAG} ${VALUES_FILE}
+
+        git --no-pager diff --no-color ${CHART_FILE}
+        git --no-pager diff --no-color ${VALUES_FILE}
+  - deploy:
+      name: Push to charts museum
+      command: |
+        helm dep up ${HELM_DIR}/${CHART_NAME}
+
+        CHARTS_REPO_USER=$(aws ssm get-parameter --name ${CHARTS_REPO_USER_SSM} --query 'Parameter.Value' --output text)
+        CHARTS_REPO_PASS=$(aws ssm get-parameter --name ${CHARTS_REPO_PASS_SSM} --query 'Parameter.Value' --output text)
+        CHARTS_REPO=$(aws ssm get-parameter --name ${CHARTS_REPO_SSM} --query 'Parameter.Value' --output text)
+
+        if [ -z "$(echo ${CHARTS_REPO} | grep '^https://')" ] ; then
+          CHARTS_REPO="https://$CHARTS_REPO"
+        fi
+
+        echo "Adding '$CHARTS_REPO'"
+        helm repo add --username "${CHARTS_REPO_USER}" --password "${CHARTS_REPO_PASS}" codacy ${CHARTS_REPO}
+        helm push ${HELM_DIR}/${CHART_NAME} codacy
