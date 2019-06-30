@@ -1,120 +1,116 @@
 version: 2.1
 
-# add your orb below, to be used in integration tests (note: a @dev:alpha
-# release must exist; you'll need to publish manually at least once)
-# you can use scripts/publish-alpha.sh to publish a @dev:alpha release
-orbs:
-  codacy: codacy/base@dev:alpha
-  orb-tools: circleci/orb-tools@8.5.0
+references:
+  git_job: &git_job
+    docker:
+      - image: codacy/git-version:1.0.8
+    working_directory: ~/workdir
+
+  circleci_job: &circleci_job
+    docker:
+      - image: circleci/circleci-cli:0.1.5705
+    working_directory: ~/workdir
+
+jobs:
+  checkout_and_version:
+    <<: *git_job
+    steps:
+      - checkout
+      - run:
+          name: Set version
+          command: |
+            /bin/git-version > .version
+      - run:
+          name: Current version
+          command: cat .version
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - workdir
+
+  tag_version:
+    <<: *git_job
+    steps:
+      - attach_workspace:
+          at: ~/
+      - add_ssh_keys:
+          fingerprints:
+          - "df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5"
+      - run:
+          name: add bitbucket known host
+          command: |
+            mkdir -p ~/.ssh
+            touch ~/.ssh/known_hosts
+            ssh-keyscan github.com >> ~/.ssh/known_hosts
+      - deploy:
+          name: Tag git repository
+          command: git tag $(cat .version) && git push --tags
+
+  pack_and_validate:
+    <<: *circleci_job
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Pack orb
+          command: circleci config pack src > orb.yml 
+      - run:
+          name: Validate orb
+          command: circleci orb validate orb.yml
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - workdir/orb.yml
+
+  publish_dev:
+    <<: *circleci_job
+    steps:
+      - attach_workspace:
+          at: ~/
+      - deploy:
+          name: Publish orb as dev (deleted after 90 days)
+          command: |
+            circleci orb publish orb.yml codacy/base@dev:$(cat .version) --token $CIRCLE_TOKEN
+
+  publish_prod:
+    <<: *circleci_job
+    steps:
+      - attach_workspace:
+          at: ~/
+      - deploy:
+          name: Publish final orb
+          command: |
+            circleci orb publish orb.yml codacy/base@$(cat .version) --token $CIRCLE_TOKEN
 
 workflows:
-  # this `lint-pack_validate_publish-dev` workflow will run on any commit
-  lint-pack_validate_publish-dev:
+
+  pack_validate_publish:
     jobs:
-      # lint your destructured orb YAML files
-      - orb-tools/lint
+      - checkout_and_version
 
-      # pack your orb YAML files to a single orb.yml
-      # validate the orb.yml file to ensure it is well-formed
-      - orb-tools/pack:
+      - pack_and_validate:
           context: CodacyCircleCI
           requires:
-            - orb-tools/lint
+          - checkout_and_version
 
-      # release dev version of orb, for testing & possible publishing
-      # requires a CircleCI API token to be stored as CIRCLE_TOKEN (default)
-      # https://circleci.com/docs/2.0/managing-api-tokens
-      # store CIRCLE_TOKEN as a project env var or Contexts resource
-      # if using Contexts, add your context below
-      - orb-tools/publish-dev:
-          context: CodacyCircleCI
-          orb-name: codacy/base
+      - tag_version:
           requires:
-            - orb-tools/pack
+          - pack_and_validate
 
-      # trigger an integration workflow to test the dev version of your orb
-      # an SSH key must be stored in your orb's repository and in CircleCI
-      # (add the public key as a read/write key on GitHub; add the private
-      # key in CircleCI via SSH Permissions, with github.com as Hostname)
-      - orb-tools/trigger-integration-workflow:
-          name: trigger-integration-dev
+      - publish_dev:
           context: CodacyCircleCI
-          ssh-fingerprints: df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5
           requires:
-            - orb-tools/publish-dev
+          - tag_version
           filters:
             branches:
-              ignore: master
+              ignore:
+              - master
 
-      # by default, the 1st job (above) will trigger only integration tests;
-      # the 2nd job (below) may also publish a production orb version
-      - orb-tools/trigger-integration-workflow:
-          name: trigger-integration-master
+      - publish_prod:
           context: CodacyCircleCI
-          ssh-fingerprints: df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5
-          tag: master
           requires:
-            - orb-tools/publish-dev
+          - tag_version
           filters:
             branches:
-              only: master
-
-  # this `integration-tests_prod-release` workflow will ignore commits
-  # it is only triggered by git tags, which are created in the job above
-  # integration-tests_prod-release:
-  #   jobs:
-  #     # - your integration test jobs go here
-  #     # - you will want to call each integration testing job twice,
-  #     # - each under a different name:
-  #     # - once, for integration tests triggered by non-master-branch commits
-  #     # - and again, for tests triggered by commits to master
-  #     # - only commits to master should potentially trigger a prod release
-
-  #     # patch, minor, or major publishing
-  #     - orb-tools/dev-promote-prod:
-  #         name: dev-promote-patch
-  #         orb-name: circleci/orb-tools
-  #         requires:
-  #           # - your integration testing jobs go here
-  #         filters:
-  #           branches:
-  #             ignore: /.*/
-  #           tags:
-  #             only: /master-patch.*/
-
-  #     - orb-tools/dev-promote-prod:
-  #         name: dev-promote-minor
-  #         release: minor
-  #         orb-name: circleci/orb-tools
-  #         requires:
-  #           # - your integration testing jobs go here
-  #         filters:
-  #           branches:
-  #             ignore: /.*/
-  #           tags:
-  #             only: /master-minor.*/
-
-  #     - orb-tools/dev-promote-prod:
-  #         name: dev-promote-major
-  #         release: major
-  #         orb-name: circleci/orb-tools
-  #         requires:
-  #           # - your integration testing jobs go here
-  #         filters:
-  #           branches:
-  #             ignore: /.*/
-  #           tags:
-  #             only: /master-major.*/
-
-# yaml anchor filters
-integration-dev_filters: &integration-dev_filters
-  branches:
-    ignore: /.*/
-  tags:
-    only: /integration-.*/
-
-integration-master_filters: &integration-master_filters
-  branches:
-    ignore: /.*/
-  tags:
-    only: /master-.*/
+              only:
+              - master
