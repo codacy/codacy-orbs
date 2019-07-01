@@ -1,51 +1,15 @@
 version: 2.1
 
-references:
-  git_job: &git_job
-    docker:
-      - image: codacy/git-version:1.0.8
-    working_directory: ~/workdir
+orbs:
+  codacy: codacy/base@0.0.13
 
+references:
   circleci_job: &circleci_job
     docker:
       - image: circleci/circleci-cli:0.1.5705
     working_directory: ~/workdir
 
 jobs:
-  checkout_and_version:
-    <<: *git_job
-    steps:
-      - checkout
-      - run:
-          name: Set version
-          command: |
-            /bin/git-version > .version
-      - run:
-          name: Current version
-          command: cat .version
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - workdir
-
-  tag_version:
-    <<: *git_job
-    steps:
-      - attach_workspace:
-          at: ~/
-      - add_ssh_keys:
-          fingerprints:
-          - "df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5"
-      - run:
-          name: add bitbucket known host
-          command: |
-            mkdir -p ~/.ssh
-            touch ~/.ssh/known_hosts
-            ssh-keyscan github.com >> ~/.ssh/known_hosts
-      - deploy:
-          name: Tag git repository
-          command: git tag $(cat .version) && git push --tags
-
   pack_and_validate:
     <<: *circleci_job
     steps:
@@ -69,8 +33,7 @@ jobs:
           at: ~/
       - deploy:
           name: Publish orb as dev (deleted after 90 days)
-          command: |
-            circleci orb publish orb.yml codacy/base@dev:$(cat .version) --token $CIRCLE_TOKEN
+          command: circleci orb publish orb.yml codacy/base@dev:$(cat .version) --token $CIRCLE_TOKEN
 
   publish_prod:
     <<: *circleci_job
@@ -79,21 +42,21 @@ jobs:
           at: ~/
       - deploy:
           name: Publish final orb
-          command: |
-            circleci orb publish orb.yml codacy/base@$(cat .version) --token $CIRCLE_TOKEN
+          command: circleci orb publish orb.yml codacy/base@$(cat .version) --token $CIRCLE_TOKEN
 
 workflows:
 
   pack_validate_publish:
     jobs:
-      - checkout_and_version
+      - codacy/checkout_and_version
 
       - pack_and_validate:
           context: CodacyCircleCI
           requires:
-          - checkout_and_version
+          - codacy/checkout_and_version
 
-      - tag_version:
+      - codacy/tag_version:
+          name: tag_version
           requires:
           - pack_and_validate
 
