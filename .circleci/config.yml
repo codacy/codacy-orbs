@@ -9,6 +9,11 @@ references:
       - image: circleci/circleci-cli:0.1.5705
     working_directory: ~/workdir
 
+  lint_job: &lint_job
+    docker:
+      - image: singapore/lint-condo@sha256:b5edd1f14371b18d4446adc032348663acae8e6c65d0052a74d6ee1feb246107
+    working_directory: ~/workdir
+
 jobs:
   pack_and_validate:
     <<: *circleci_job
@@ -17,7 +22,7 @@ jobs:
           at: ~/
       - run:
           name: Pack orb
-          command: circleci config pack src > orb.yml 
+          command: circleci config pack src > orb.yml
       - run:
           name: Validate orb
           command: circleci orb validate orb.yml
@@ -44,36 +49,60 @@ jobs:
           name: Publish final orb
           command: circleci orb publish orb.yml codacy/base@$(cat .version) --token $CIRCLE_TOKEN
 
+  lint:
+    <<: *lint_job
+    steps:
+      - checkout
+      - run:
+          name: output default .yamllint file in the working directory
+          command: |
+            cat \<< EOF > .yamllint
+            extends: relaxed
+
+            rules:
+              line-length:
+                max: 200
+                allow-non-breakable-inline-mappings: true
+
+            EOF
+      - run:
+          name: yamllint
+          command: yamllint .
+
 workflows:
 
   pack_validate_publish:
     jobs:
-      - codacy/checkout_and_version
+      - lint
+
+      - codacy/checkout_and_version:
+          name: checkout_and_version
 
       - pack_and_validate:
           context: CodacyCircleCI
           requires:
-          - codacy/checkout_and_version
+            - checkout_and_version
+            - lint
 
       - codacy/tag_version:
           name: tag_version
           requires:
-          - pack_and_validate
+            - pack_and_validate
 
       - publish_dev:
           context: CodacyCircleCI
           requires:
-          - tag_version
+            - tag_version
           filters:
             branches:
               ignore:
-              - master
+                - master
 
       - publish_prod:
           context: CodacyCircleCI
           requires:
-          - tag_version
+            - tag_version
           filters:
             branches:
               only:
-              - master
+                - master
