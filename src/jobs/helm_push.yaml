@@ -25,8 +25,8 @@ steps:
   - run:
       name: Set image tag and version using semver
       command: |
-        ytool -s appVersion "$(cat .version)" -s version "${SEMVER}" "${HELM_DIR}/${CHART_NAME}/Chart.yaml" -e
-        ytool -s image.tag "$(cat .version)" "${HELM_DIR}/${CHART_NAME}/values.yaml" -e
+        ytool -s appVersion "$(cat .version)" -s version "${SEMVER}" -f "${HELM_DIR}/${CHART_NAME}/Chart.yaml" -e
+        ytool -s image.tag "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/values.yaml" -e
         git --no-pager diff --no-color
 
   - deploy:
