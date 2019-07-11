@@ -25,7 +25,7 @@ steps:
   - run:
       name: Set image tag and version using semver
       command: |
-        ytool -s appVersion "$(cat .version)" -s version "${SEMVER}" -f "${HELM_DIR}/${CHART_NAME}/Chart.yaml" -e
+        ytool -s appVersion "$(cat .version)" -s version "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/Chart.yaml" -e
         ytool -s image.tag "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/values.yaml" -e
         git --no-pager diff --no-color
 
@@ -34,6 +34,6 @@ steps:
       command: |
         helm dep up ${HELM_DIR}/${CHART_NAME}
 
-        echo "Adding '$CHARTS_REPO'"
+        echo "Adding '<< parameters.charts_repo_url >>'"
         helm repo add --username "${CHARTS_REPO_USER}" --password "${CHARTS_REPO_PASS}" codacy << parameters.charts_repo_url >>
         helm push ${HELM_DIR}/${CHART_NAME} codacy
