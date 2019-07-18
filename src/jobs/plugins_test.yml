@@ -1,0 +1,94 @@
+description: "A default job for plugins test"
+
+executor: machine
+
+parameters:
+  ignore_descriptions:
+    type: boolean
+    default: false
+    description: Don't check if all the patterns have descriptions
+  threads:
+    type: integer
+    default: 8
+    description: Number of parallel threads to run the tests
+  noremove:
+    type: boolean
+    default: false
+    description: Don't remove dockers after running test
+  docker_image:
+    type: string
+    default: $CIRCLE_PROJECT_REPONAME:latest
+    description: Docker image used by plugins test
+  docker_image_path:
+    type: string
+    default: docker.tar
+    description: Docker path to the docker image
+  run_json_test:
+    type: boolean
+    default: true
+    description: Run 'json' test in plugins test
+  run_pattern_test:
+    type: boolean
+    default: true
+    description: Run 'pattern' test in plugins test
+  run_plugin_test:
+    type: boolean
+    default: true
+    description: Run 'plugin' test in plugins test
+
+steps:
+  - run:
+      name: Clone test project
+      command: |
+        (git -C ~/codacy-plugins-test fetch --all && 
+          git -C ~/codacy-plugins-test reset --hard origin/master) || 
+            git clone git://github.com/codacy/codacy-plugins-test.git ~/codacy-plugins-test
+  - run:
+      name: Generate cache key
+      command: |
+        shasum build.sbt \
+          project/plugins.sbt \
+          project/build.properties \
+          project/Common.scala \
+          project/Dependencies.scala > /tmp/dependencies.cache.tmp
+  - restore_cache:
+      key: sbt-ivy2-dependencies-1.0.0-{{ checksum "/tmp/dependencies.cache.tmp" }}
+  - run:
+      name: Compile test project
+      working_directory: ~/codacy-plugins-test
+      command: sbt compile
+  - save_cache:
+      paths:
+        - "~/.ivy2"
+        - "~/.m2"
+        - "~/.sbt"
+        - "~/codacy-plugins-test/target"
+        - "~/codacy-plugins-test/project/target"
+        - "~/codacy-plugins-test/project/project"
+      key: sbt-ivy2-dependencies-1.0.0-{{ checksum "/tmp/dependencies.cache.tmp" }}
+  - attach_workspace:
+      at: /tmp/workspace
+  - run:
+      name: Load docker from file
+      command: docker load --input /tmp/workspace/<< parameters.docker_image_path >>
+  - when:
+      condition: << parameters.run_pattern_test >>
+      steps:
+        - run:
+            name: Test patterns
+            working_directory: ~/codacy-plugins-test
+            command: sbt -Dcodacy.tests.noremove=<< parameters.noremove >> -Dcodacy.tests.threads=<< parameters.threads >> "runMain codacy.plugins.DockerTest pattern << parameters.docker_image >>"
+  - when:
+      condition: << parameters.run_json_test >>
+      steps:
+        - run:
+            name: Test json
+            working_directory: ~/codacy-plugins-test
+            command: sbt -Dcodacy.tests.ignore.descriptions=<< parameters.ignore_descriptions >> "runMain codacy.plugins.DockerTest json << parameters.docker_image >>"
+  - when:
+      condition: << parameters.run_plugin_test >>
+      steps:
+        - run:
+            name: Test plugin
+            working_directory: ~/codacy-plugins-test
+            command: sbt "runMain codacy.plugins.DockerTest plugin << parameters.docker_image >>"
