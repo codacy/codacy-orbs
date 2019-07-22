@@ -1,0 +1,39 @@
+description: "Set version and publish to chart museum"
+
+executor: aws
+
+parameters:
+  chart_name:
+    type: string
+    description: "name of the helm chart"
+  helm_dir:
+    type: string
+    description: "directory containing the helm chart"
+    default: ".helm"
+  charts_repo_url:
+    type: string
+    description: "charts repo domain ssm parameter"
+    default: "https://charts.codacy.com"
+
+environment:
+  CHART_NAME: << parameters.chart_name >>
+  HELM_DIR: << parameters.helm_dir >>
+
+steps:
+  - attach_workspace:
+      at: ~/
+  - run:
+      name: Set image tag and version using semver
+      command: |
+        ytool -s appVersion "$(cat .version)" -s version "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/Chart.yaml" -e
+        ytool -s image.tag "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/values.yaml" -e
+        git --no-pager diff --no-color
+
+  - deploy:
+      name: Push to charts museum
+      command: |
+        helm dep up ${HELM_DIR}/${CHART_NAME}
+
+        echo "Adding '<< parameters.charts_repo_url >>'"
+        helm repo add --username "${CHARTS_REPO_USER}" --password "${CHARTS_REPO_PASS}" codacy << parameters.charts_repo_url >>
+        helm push ${HELM_DIR}/${CHART_NAME} codacy

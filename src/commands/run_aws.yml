@@ -1,0 +1,51 @@
+description: >
+  Run a command that requires AWS access
+
+parameters:
+  cmd:
+    type: string
+    description: "command to run"
+  title:
+    type: string
+    description: "Name of the run/deploy step"
+    default: "Running command with AWS profile"
+  credentials_file_content:
+    type: string
+    default: |
+      [default]
+      aws_access_key_id=$ACCESS_KEY_ID
+      aws_secret_access_key=$SECRET_ACCESS_KEY
+      [integration]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_INTEGRATION:role/$CONTINUOUS_DELIVERY_ROLE
+      [staging]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_STAGING:role/$CONTINUOUS_DELIVERY_ROLE
+      [production]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$CONTINUOUS_DELIVERY_ROLE
+  deploy:
+    type: boolean
+    description: "Use 'deploy' instead of 'run' for this command"
+    default: true
+
+steps:
+  - run:
+      name: Setup AWS Credentials
+      command: |
+        mkdir -p ~/.aws
+        cat > ~/.aws/credentials \<< EOF
+        << parameters.credentials_file_content >>
+        EOF
+  - when:
+      condition: << parameters.deploy >>
+      steps:
+        - deploy:
+            name: << parameters.title >>
+            command: << parameters.cmd >>
+  - unless:
+      condition: << parameters.deploy >>
+      steps:
+        - run:
+            name: << parameters.title >>
+            command: << parameters.cmd >>
