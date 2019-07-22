@@ -27,7 +27,7 @@ parameters:
   deploy:
     type: boolean
     description: "Use 'deploy' instead of 'run' for this command"
-    default: false
+    default: true
 
 steps:
   - run:

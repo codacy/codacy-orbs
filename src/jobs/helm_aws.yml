@@ -38,7 +38,10 @@ steps:
       steps:
         - run_aws:
             title: Setup kubeconfig context for the cluster
-            cmd: aws eks update-kubeconfig --name << parameters.cluster_name >>
+            deploy: false
+            cmd: |
+              aws eks update-kubeconfig --name << parameters.cluster_name >>
+              kubectl config get-contexts
 
         - run_aws:
             title: Helm command - << parameters.cmd >>
