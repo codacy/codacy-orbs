@@ -6,10 +6,15 @@ parameters:
   cmd:
     type: string
     description: "The shell command to run"
+  working_directory:
+    type: string
+    description: "The directory where to run the command"
+    default: "~/workdir"
 
 steps:
   - attach_workspace:
       at: ~/
   - run:
       name: Shell command - << parameters.cmd >>
+      working_directory: << parameters.working_directory >>
       command: << parameters.cmd >>
