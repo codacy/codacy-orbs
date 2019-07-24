@@ -1,0 +1,39 @@
+description: >
+  Run a generic Yarn command restoring the cache before and saving it after
+
+parameters:
+  cmd:
+    type: string
+    description: "Yarn command to run"
+  working_directory:
+    type: string
+    description: "The directory where to run the command"
+    default: "~/workdir"
+  cache_key:
+    type: string
+    description: "The key to prefix the cache"
+    default: "yarn-cache"
+  save_cache:
+    type: boolean
+    default: true
+    description: "Save the cache after the command is executed"
+
+steps:
+
+  - restore_cache:
+      keys:
+        - << parameters.cache_key >>-{{ checksum "yarn.lock" }}
+        - << parameters.cache_key >>
+
+  - run:
+      name: Yarn command - << parameters.cmd >>
+      working_directory:  << parameters.working_directory >>
+      command: << parameters.cmd >>
+
+  - when:
+      condition: <<parameters.save_cache>>
+      steps:
+        - save_cache:
+            key: << parameters.cache_key >>-{{ checksum "yarn.lock" }}
+            paths:
+              - << parameters.working_directory >>/node_modules
