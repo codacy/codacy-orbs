@@ -1,0 +1,44 @@
+description: "Set version and publish to chart museum"
+
+executor: aws
+
+parameters:
+  version:
+    type: string
+    description: "name of the helm chart"
+    default: "$(cat .version)"
+
+  chart_name:
+    type: string
+    description: "name of the helm chart"
+
+  source_charts_repo_url:
+    type: string
+    description: "domain for the "
+    default: "https://charts.codacy.com/staging"
+
+  target_charts_repo_url:
+    type: string
+    description: "charts repo domain ssm parameter"
+    default: "https://charts.codacy.com/stable"
+
+  target_charts_repo_user:
+    type: string
+    description: "charts repo domain ssm parameter"
+    default: ${CHARTS_REPO_USER}
+
+  target_charts_repo_pass:
+    type: string
+    description: "charts repo domain ssm parameter"
+    default: ${CHARTS_REPO_PASS}
+
+steps:
+  - attach_workspace:
+      at: ~/
+
+  - deploy:
+      name: Push to charts museum
+      command: |
+        cd $(mktemp -d)
+        helm fetch --repo << parameters.source_charts_repo_url >> << parameters.chart_name >> --version << parameters.version >>
+        helm push *.tgz << parameters.target_charts_repo_url >> -u " << parameters.target_charts_repo_user >>" -p "<< parameters.target_charts_repo_pass >>"
