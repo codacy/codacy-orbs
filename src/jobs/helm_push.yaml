@@ -13,7 +13,7 @@ parameters:
   charts_repo_url:
     type: string
     description: "charts repo domain ssm parameter"
-    default: "https://charts.codacy.com"
+    default: "https://charts.codacy.com/incubator"
 
 environment:
   CHART_NAME: << parameters.chart_name >>
