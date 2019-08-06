@@ -15,7 +15,7 @@ parameters:
   source_charts_repo_url:
     type: string
     description: "domain for the repo to download the chart"
-    default: "https://charts.codacy.com/staging"
+    default: "https://charts.codacy.com/incubator"
 
   target_charts_repo_url:
     type: string
