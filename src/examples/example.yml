@@ -15,6 +15,7 @@ usage:
         - codacy/sbt:
             name: test
             cmd: sbt ;coverage;test;coverageReport;coverageAggregate;codacyCoverage
+            persist_to_workspace: true
             requires:
               - codacy/checkout_and_version
 
