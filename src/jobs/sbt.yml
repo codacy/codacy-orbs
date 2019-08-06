@@ -23,6 +23,10 @@ parameters:
       [maven]
       source_profile = default
       role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$MAVEN_PUBLISHER_ROLE
+  persist_to_workspace:
+    type: boolean
+    description: "Whether to persist the workspace or not at the end of the job"
+    default: false
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -40,3 +44,10 @@ steps:
         EOF
   - sbt_cached:
       cmd: << parameters.cmd >>
+  - when:
+      condition: << parameters.persist_to_workspace >>
+      steps:
+        - persist_to_workspace:
+            root: ~/
+            paths:
+              - workdir/*
