@@ -17,6 +17,7 @@ parameters:
   push_options:
     type: string
     description: "helm push options to be added"
+    default: ""
 
 environment:
   CHART_NAME: << parameters.chart_name >>
