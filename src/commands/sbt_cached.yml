@@ -40,3 +40,4 @@ steps:
               - "~/.ivy2/cache"
               - "~/.sbt"
               - "~/.m2"
+              - "~/.cache/coursier/v1"
