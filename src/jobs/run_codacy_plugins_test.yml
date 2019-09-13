@@ -14,22 +14,23 @@ steps:
   - attach_workspace:
       at: ~/
   - restore_cache:
-          key: codacy-plugins-test-cache-$CODACY_PLUGINS_TEST_VERSION
-      - attach_workspace:
-          at: ~/
-      - run:
-          command: |
-            mkdir -p codacy-plugins-test
-            cd codacy-plugins-test
-            FILENAME=codacy-plugins-test-$CODACY_PLUGINS_TEST_VERSION
-            if [ ! -f "$FILENAME" ]; then
-              wget https://bintray.com/codacy/Binaries/download_file?file_path=$CODACY_PLUGINS_TEST_VERSION%2Fcodacy-plugins-test-linux -O $FILENAME
-              chmod +x $FILENAME
-            fi
-            docker load --input ~/workdir/docker-image.tar
-            ./$FILENAME json $CIRCLE_PROJECT_REPONAME:latest
-            ./$FILENAME pattern $CIRCLE_PROJECT_REPONAME:latest
-      - save_cache:
-          key: codacy-plugins-test-cache-$CODACY_PLUGINS_TEST_VERSION
-          paths:
-            - ~/codacy-plugins-test
+      key: codacy-plugins-test-cache-$CODACY_PLUGINS_TEST_VERSION
+  - attach_workspace:
+      at: ~/
+  - run:
+      command: |
+        mkdir -p codacy-plugins-test
+        cd codacy-plugins-test
+        FILENAME=codacy-plugins-test-$CODACY_PLUGINS_TEST_VERSION
+        LINK="https://bintray.com/codacy/Binaries/download_file?file_path=$CODACY_PLUGINS_TEST_VERSION%2Fcodacy-plugins-test-linux"
+        if [ ! -f "$FILENAME" ]; then
+          wget $LINK -O $FILENAME
+          chmod +x $FILENAME
+        fi
+        docker load --input ~/workdir/docker-image.tar
+        ./$FILENAME json $CIRCLE_PROJECT_REPONAME:latest
+        ./$FILENAME pattern $CIRCLE_PROJECT_REPONAME:latest
+  - save_cache:
+      key: codacy-plugins-test-cache-$CODACY_PLUGINS_TEST_VERSION
+      paths:
+        - ~/codacy-plugins-test
