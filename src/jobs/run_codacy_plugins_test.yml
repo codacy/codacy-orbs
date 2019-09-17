@@ -6,6 +6,18 @@ parameters:
   version:
     type: string
     description: "codacy-plugins-test version"
+  run_json_tests:
+    type: boolean
+    default: true
+    description: "Run 'json' tests in codacy-plugins-test"
+  run_pattern_tests:
+    type: boolean
+    default: true
+    description: "Run 'pattern' tests in codacy-plugins-test"
+  run_plugin_tests:
+    type: boolean
+    default: false
+    description: "Run 'plugin' tests in codacy-plugins-test"
 
 steps:
   - attach_workspace:
@@ -25,8 +37,15 @@ steps:
           chmod +x $FILENAME
         fi
         docker load --input ~/workdir/docker-image.tar
-        ./$FILENAME json $CIRCLE_PROJECT_REPONAME:latest
-        ./$FILENAME pattern $CIRCLE_PROJECT_REPONAME:latest
+        if << parameters.run_json_tests >> ; then
+          ./$FILENAME json $CIRCLE_PROJECT_REPONAME:latest
+        fi
+        if << parameters.run_pattern_tests >> ; then
+          ./$FILENAME pattern $CIRCLE_PROJECT_REPONAME:latest
+        fi
+        if << parameters.run_plugin_tests >> ; then
+          ./$FILENAME plugin $CIRCLE_PROJECT_REPONAME:latest
+        fi
   - save_cache:
       key: codacy-plugins-test-cache-<< parameters.version >>
       paths:
