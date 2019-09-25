@@ -1,8 +1,7 @@
 version: 2.1
 
 description: >
-  # What will your orb allow users to do?
-  # Descriptions should be short, simple, and clear.
+  Internal orb for Codacy CI pipeline
 
 orbs:
   # if your orb will use any other orbs, you can import them here
