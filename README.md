@@ -1,6 +1,6 @@
 # Codacy Orbs
 
-This repository contains orbs used in Codacy.
+This repository contains orbs used in the internal Codacy CI pipeline.
 
 ### About Orbs
 
