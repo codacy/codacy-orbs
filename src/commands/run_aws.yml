@@ -2,14 +2,15 @@ description: >
   Run a command that requires AWS access
 
 parameters:
-  cmd:
+  cmd_name:
+    description: "Name of the step"
     type: string
-    description: "command to run"
-  title:
-    type: string
-    description: "Name of the run/deploy step"
     default: "Running command with AWS profile"
+  cmd:
+    description: "Command to run"
+    type: string
   credentials_file_content:
+    description: "AWS credentials file contents to grant access for the step"
     type: string
     default: |
       [default]
@@ -25,8 +26,8 @@ parameters:
       source_profile = default
       role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$CONTINUOUS_DELIVERY_ROLE
   deploy:
+    description: "Use step type 'deploy' instead of 'run' for this command"
     type: boolean
-    description: "Use 'deploy' instead of 'run' for this command"
     default: true
 
 steps:
@@ -41,11 +42,11 @@ steps:
       condition: << parameters.deploy >>
       steps:
         - deploy:
-            name: << parameters.title >>
+            name: << parameters.cmd_name >>
             command: << parameters.cmd >>
   - unless:
       condition: << parameters.deploy >>
       steps:
         - run:
-            name: << parameters.title >>
+            name: << parameters.cmd_name >>
             command: << parameters.cmd >>

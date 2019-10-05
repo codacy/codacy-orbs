@@ -4,19 +4,19 @@ executor: aws
 
 parameters:
   chart_name:
+    description: "Name of the helm chart"
     type: string
-    description: "name of the helm chart"
   helm_dir:
+    description: "Directory containing the helm chart"
     type: string
-    description: "directory containing the helm chart"
     default: ".helm"
   charts_repo_url:
+    description: "Charts repo domain ssm parameter"
     type: string
-    description: "charts repo domain ssm parameter"
     default: "https://charts.codacy.com/unstable"
   push_options:
+    description: "Helm push options to be added"
     type: string
-    description: "helm push options to be added"
     default: ""
 
 environment:

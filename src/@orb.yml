@@ -3,5 +3,4 @@ version: 2.1
 description: >
   Internal orb for Codacy CI pipeline
 
-orbs:
-  # if your orb will use any other orbs, you can import them here
+orbs: # Add other orbs to use here
