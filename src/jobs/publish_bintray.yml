@@ -1,0 +1,31 @@
+description: Publish to Bintray
+
+executor: machine
+
+parameters:
+  path:
+    type: string
+    description: Path to the artifacts folder
+  package:
+    type: string
+    description: Bintray package name
+
+steps:
+  - attach_workspace:
+      at: ~/
+  - run:
+      name: Publish to Bintray
+      command: |
+        ARTIFACTS_FOLDER=$(find << parameters.path >> -mindepth 1 -maxdepth 1 -type f)
+        if [ "$ARTIFACTS_FOLDER" == "" ]
+          echo "No artifacts found!"
+          exit 1
+        else
+          IFS=$'\n'
+          for file in $ARTIFACTS_FOLDER;
+          do
+            curl -T "$file" -ucodacy-ci:"$BINTRAY_API_KEY" -H "X-Bintray-Package:<< parameters.package >>" -H "X-Bintray-Version:$(cat .version)" \
+              "https://api.bintray.com/content/codacy/Binaries/$(cat .version)/$file"
+          done
+          curl -X POST -ucodacy-ci:"$BINTRAY_API_KEY" "https://api.bintray.com/content/codacy/Binaries/<< parameters.package >>/$(cat .version)/publish"
+        fi
