@@ -1,11 +1,14 @@
 description: Checkout and write the version file
 
 parameters:
-
   write_sbt_version:
     type: boolean
     default: false
     description: If during this step a file version.sbt is written as well
+  update_submodules:
+    type: boolean
+    default: false
+    description: Updates git submodules if true
 
 executor: versioning
 
@@ -26,6 +29,13 @@ steps:
         - run:
             name: Set Sbt version
             command: echo "version in ThisBuild := \"$(cat .version)\"" > version.sbt
+
+  - when:
+      condition: <<parameters.update_submodules>>
+      steps:
+        - run:
+            name: Update git submodules
+            command: git submodule update --init --recursive
 
   - persist_to_workspace:
       root: ~/
