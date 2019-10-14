@@ -4,32 +4,32 @@ executor: aws
 
 parameters:
   version:
+    description: "Name of the helm chart"
     type: string
-    description: "name of the helm chart"
     default: "$(cat .version)"
 
   chart_name:
+    description: "Name of the helm chart"
     type: string
-    description: "name of the helm chart"
 
   source_charts_repo_url:
+    description: "Domain for the repo to download the chart"
     type: string
-    description: "domain for the repo to download the chart"
     default: "https://charts.codacy.com/incubator"
 
   target_charts_repo_url:
+    description: "Domain for the repo to upload the chart"
     type: string
-    description: "domain for the repo to upload the chart"
     default: "https://charts.codacy.com/stable"
 
   target_charts_repo_user:
+    description: "Username for the repo to upload the chart"
     type: string
-    description: "username for the repo to upload the chart"
     default: ${CHARTS_REPO_USER}
 
   target_charts_repo_pass:
+    description: "Password for the repo to upload the chart"
     type: string
-    description: "password for the repo to upload the chart"
     default: ${CHARTS_REPO_PASS}
 
 steps:

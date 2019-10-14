@@ -4,8 +4,8 @@ executor: machine
 
 parameters:
   cmd:
+    description: "The command to run"
     type: string
-    description: "The shell command to run"
 
 steps:
   - attach_workspace:

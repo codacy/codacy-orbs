@@ -4,17 +4,18 @@ executor: machine
 
 parameters:
   cmd:
+    description: "SBT command to run"
     type: string
-    description: "The Sbt command to run"
   aws_profile:
-    type: string
     description: "The AWS profile to be used"
+    type: string
     default: "default"
   region:
+    description: "The AWS region for the deployment"
     type: string
-    description: "The aws region for the deployment"
     default: eu-west-1
   credentials_file_content:
+    description: "AWS credentials file contents to grant access for the step"
     type: string
     default: |
       [default]
@@ -24,12 +25,12 @@ parameters:
       source_profile = default
       role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$MAVEN_PUBLISHER_ROLE
   persist_to_workspace:
-    type: boolean
     description: "Whether to persist the workspace or not at the end of the job"
+    type: boolean
     default: false
   install_sbt_version:
+    description: "Version of SBT to install. If empty, the system one will be used"
     type: string
-    description: "Version to install of sbt, if empty default is kept"
     default: ""
 environment:
   AWS_PROFILE: << parameters.aws_profile >>

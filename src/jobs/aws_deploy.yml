@@ -4,15 +4,15 @@ executor: aws
 
 parameters:
   cmd:
+    description: "The command to run"
     type: string
-    description: "The shell command to run"
   aws_profile:
+    description: "The AWS profile to use"
     type: string
-    description: "The AWS profile to be used"
     default: "default"
   region:
+    description: "The AWS region where to deploy"
     type: string
-    description: "The aws region for the deployment"
     default: eu-west-1
 
 environment:
@@ -24,6 +24,6 @@ steps:
       at: ~/
 
   - run_aws:
-      title: AWS deploy command - << parameters.cmd >>
+      cmd_name: AWS deploy command - << parameters.cmd >>
       deploy: true
       cmd: << parameters.cmd >>

@@ -2,14 +2,17 @@ description: >
   Run a generic Sbt command restoring the cache before and saving it after
 
 parameters:
-  cmd:
+  cmd_name:
+    description: "Name of the step"
     type: string
-    description: "Sbt command to run"
-
+    default: ""
+  cmd:
+    description: "SBT command to run"
+    type: string
   save_cache:
+    description: "Save the cache after the command is executed"
     type: boolean
     default: true
-    description: "Save the cache after the command is executed"
 
 steps:
 
@@ -20,9 +23,19 @@ steps:
         - sbt-cache-{{ .Branch }}
         - sbt-cache
 
-  - run:
-      name: Sbt Command - << parameters.cmd >>
-      command: << parameters.cmd >>
+  - when:
+      condition: <<parameters.cmd_name>>
+      steps:
+        - run:
+            name: << parameters.cmd_name >>
+            command: << parameters.cmd >>
+
+  - unless:
+      condition: <<parameters.cmd_name>>
+      steps:
+        - run:
+            name: SBT command - << parameters.cmd >>
+            command: << parameters.cmd >>
 
   - when:
       condition: <<parameters.save_cache>>
