@@ -34,4 +34,3 @@ steps:
       root: ~/
       paths:
         - workdir
-        
