@@ -14,14 +14,15 @@ parameters:
 
 environment:
   DOKS_CLUSTER_NAME: << parameters.cluster_name >>
+
 steps:
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: "Helm lint"
-          command: helm lint codacy/
-      - run:
-          name: "Setup DO Credentials"
-          command: doctl auth init -t $DO_TOKEN &>/dev/null
-      - run:
-          command: << parameters.deployment_command >>
+  - attach_workspace:
+      at: ~/
+  - run:
+      name: "Helm lint"
+      command: helm lint codacy/
+  - run:
+      name: "Setup DO Credentials"
+      command: doctl auth init -t $DO_TOKEN &>/dev/null
+  - run:
+      command: << parameters.deployment_command >>

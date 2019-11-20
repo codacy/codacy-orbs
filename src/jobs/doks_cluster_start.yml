@@ -1,6 +1,7 @@
 description: >
-    "A job to start a new long-lived cluster in Digital Ocean. If a cluster with the same name exists, you can force the cluster 
-    to be destroyed and recreated."
+    "A job to start a new long-lived cluster in Digital Ocean. If a cluster
+    with the same name exists, you can force the cluster to be destroyed
+    and recreated."
 
 executor: digitalocean
 
@@ -14,11 +15,13 @@ parameters:
     type: string
     default: "1.15"
   tf_workspace:
-    description: "The terraform workspace where the tf_state of the cluster will be saved."
+    description: "The terraform workspace where the tf_state
+    of the cluster will be saved."
     type: string
     default: "nightly"
   destroy_cluster:
-    description: "If true, will delete the currently existing cluster with the same name and start a new cluster. Default is false."
+    description: "If true, will delete the currently existing cluster
+    with the same name and start a new cluster. Default is false."
     type: boolean
     default: false
   start_cluster_command:
@@ -38,14 +41,14 @@ steps:
   - run:
       name: "Setup DO Credentials"
       command: doctl auth init -t $DO_TOKEN &>/dev/null
-  - when: 
+  - when:
     condition: << parameters.destroy_cluster >>
     steps:
       - run: |
           doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>
           if [ "$?" = "0" ]; then
               << parameters.destroy_cluster_command >>
-          fi 
+          fi
   - run:
       name: "Start Cluster"
       command: |
@@ -55,4 +58,4 @@ steps:
           else
             echo "<< parameters.cluster_name>> already exists!"
             exit 1
-          fi 
+          fi
