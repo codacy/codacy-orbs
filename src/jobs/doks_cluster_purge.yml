@@ -1,0 +1,34 @@
+description: >
+    "A job to purge the codacy installation on given cluster."
+
+executor: digitalocean
+
+parameters:
+  cluster_name:
+    description: "The name of the cluster"
+    type: string
+    default: "codacy-doks-cluster-nightly"
+
+environment:
+  DOKS_CLUSTER_NAME: << parameters.cluster_name >>
+
+steps:
+  - attach_workspace:
+      at: ~/
+  - run:
+      name: "Setup DO Credentials"
+      command: doctl auth init -t $DO_TOKEN &>/dev/null
+  - run:
+      name: "Set cluster context"
+      command: doctl kubernetes cluster kubeconfig save "$DOKS_CLUSTER_NAME" --set-current-context
+  - run:
+      name: "Validate deployment status"
+      command: |
+        set -e
+        helm delete --purge codacy
+	      kubectl delete pvc -n codacy $(shell kubectl get pvc -n codacy -o jsonpath='{.items[*].metadata.name}') & 
+	      kubectl delete pods -n codacy $(shell kubectl get pods -n codacy -o jsonpath='{.items[*].metadata.name}') --force --grace-period=0 --ignore-not-found=true
+  - persist_to_workspace:
+      root: ~/
+      paths:
+        - workdir

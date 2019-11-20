@@ -1,0 +1,36 @@
+description: >
+    "A job to verify whether the deployment rollouts were successful on a given digital ocean cluster."
+
+executor: digitalocean
+
+parameters:
+  cluster_name:
+    description: "The name of the cluster"
+    type: string
+    default: "codacy-doks-cluster-nightly"
+
+environment:
+  DOKS_CLUSTER_NAME: << parameters.cluster_name >>
+
+steps:
+  - attach_workspace:
+      at: ~/
+  - run:
+      name: "Setup DO Credentials"
+      command: doctl auth init -t $DO_TOKEN &>/dev/null
+  - run:
+      name: "Set cluster context"
+      command: doctl kubernetes cluster kubeconfig save "$DOKS_CLUSTER_NAME" --set-current-context
+  - run:
+      name: "Validate deployment status"
+      command: |
+        set -e
+        DEPLOYMENTS=$(kubectl get deployments -n codacy | awk '{print "deployment/"$1}' | tail -n +2 )
+        for DEPLOYMENT in ${DEPLOYMENTS[@]}
+        do
+            kubectl rollout status -n codacy --watch --timeout=30m "$DEPLOYMENT"
+        done
+  - persist_to_workspace:
+      root: ~/
+      paths:
+        - workdir

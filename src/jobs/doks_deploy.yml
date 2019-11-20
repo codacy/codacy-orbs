@@ -1,0 +1,27 @@
+description: >
+    "A job to do a helm installation on a given cluster."
+
+executor: digitalocean
+
+parameters:
+  cluster_name:
+    description: "The name of the cluster"
+    type: string
+    default: "codacy-doks-cluster-nightly"
+  deployment_command:
+    description: "The deployment command to run."
+    type: string
+
+environment:
+  DOKS_CLUSTER_NAME: << parameters.cluster_name >>
+steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: "Helm lint"
+          command: helm lint codacy/
+      - run:
+          name: "Setup DO Credentials"
+          command: doctl auth init -t $DO_TOKEN &>/dev/null
+      - run:
+          command: << parameters.deployment_command >>

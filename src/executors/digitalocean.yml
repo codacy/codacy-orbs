@@ -1,0 +1,7 @@
+description: >
+  A docker image to run DO commands
+
+docker:
+  - image: codacy/ci-do:0.2.3
+
+working_directory: ~/workdir
