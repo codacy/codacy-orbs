@@ -47,13 +47,13 @@ steps:
         - run:
             name: "Destroy cluster if necessary"
             command: |
-            doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>;
-            if [ "$?" = "0" ]; then
-                << parameters.destroy_cluster_command >>
-            else
-              echo "Nothing to destroy..."
-              exit 0
-            fi
+              doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>;
+              if [ "$?" = "0" ]; then
+                  << parameters.destroy_cluster_command >>
+              else
+                echo "Nothing to destroy..."
+                exit 0
+              fi
   - run:
       name: "Start Cluster"
       command: |
