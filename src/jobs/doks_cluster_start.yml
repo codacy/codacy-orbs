@@ -44,7 +44,9 @@ steps:
   - when:
       condition: << parameters.destroy_cluster >>
       steps:
-        - run: |
+        - run:
+            name: "Destroy cluster if necessary"
+            command: |
             doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>;
             if [ "$?" = "0" ]; then
                 << parameters.destroy_cluster_command >>
