@@ -51,8 +51,8 @@ steps:
             name: "Destroy cluster if necessary"
             command: |
               CLUSTER=$(doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>)
-              if [ -z "$CLUSTER" ]; then    
-                echo "Nothing to destroy..."  
+              if [ -z "$CLUSTER" ]; then
+                echo "Nothing to destroy..."
               else
                 << parameters.destroy_cluster_command >>
               fi
