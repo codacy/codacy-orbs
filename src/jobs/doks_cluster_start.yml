@@ -41,7 +41,7 @@ steps:
   - run:
       name: "Setup DO Credentials"
       command: doctl auth init -t $DO_TOKEN &>/dev/null
-  - run: 
+  - run:
       name: "Check running clusters"
       command: doctl kubernetes cluster list
   - when:
