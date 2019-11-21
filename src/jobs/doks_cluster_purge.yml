@@ -22,10 +22,11 @@ steps:
       name: "Set cluster context"
       command: doctl kubernetes cluster kubeconfig save "$DOKS_CLUSTER_NAME" --set-current-context
   - run:
-      name: "Validate deployment status"
+      name: "Purge codacy"
       command: |
-        set -e
+        set +e
         helm delete --purge codacy
+        set -e
         kubectl delete pvc -n codacy $(shell kubectl get pvc -n codacy -o jsonpath='{.items[*].metadata.name}') &
         kubectl delete pods -n codacy $(shell kubectl get pods -n codacy -o jsonpath='{.items[*].metadata.name}') --force --grace-period=0 --ignore-not-found=true
   - persist_to_workspace:
