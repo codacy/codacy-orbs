@@ -50,7 +50,7 @@ steps:
         - run:
             name: "Destroy cluster if necessary"
             command: |
-              doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>;
+              set +e; doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>; set -e;
               if [ "$?" == "0" ]; then
                   << parameters.destroy_cluster_command >>
               else
@@ -60,7 +60,7 @@ steps:
   - run:
       name: "Start Cluster"
       command: |
-          doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>;
+          set +e; doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>; set -e;
           if [ "$?" == "1" ]; then
               << parameters.start_cluster_command >>
           else
