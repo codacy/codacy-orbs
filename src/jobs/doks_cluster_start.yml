@@ -50,8 +50,9 @@ steps:
         - run:
             name: "Destroy cluster if necessary"
             command: |
-              set +e; doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>; set -e;
+              set +eo pipefail; doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>;
               if [ "$?" == "0" ]; then
+                  set -eo pipefail
                   << parameters.destroy_cluster_command >>
               else
                 echo "Nothing to destroy..."
@@ -60,8 +61,9 @@ steps:
   - run:
       name: "Start Cluster"
       command: |
-          set +e; doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>; set -e;
+          set +eo pipefail; doctl kubernetes cluster list | grep << parameters.cluster_name >> | grep << parameters.kubernetes_version >>;
           if [ "$?" == "1" ]; then
+              set -eo pipefail
               << parameters.start_cluster_command >>
           else
             echo "<< parameters.cluster_name>> already exists!"
