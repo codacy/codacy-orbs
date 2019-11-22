@@ -18,4 +18,4 @@ steps:
         if [ "${CIRCLE_BRANCH}" != "master" ]; then
           GHR_FLAGS+="-prerelease"
         fi
-        ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${GHR_FLAGS} -delete $(cat .version) << parameters.path >>
+        ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${GHR_FLAGS} -delete $(cat ~/workdir/.version) << parameters.path >>

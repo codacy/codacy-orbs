@@ -24,8 +24,8 @@ steps:
           IFS=$'\n'
           for file in $ARTIFACTS_FOLDER;
           do
-            curl -T "$file" -ucodacy-ci:"$BINTRAY_API_KEY" -H "X-Bintray-Package:<< parameters.package >>" -H "X-Bintray-Version:$(cat .version)" \
-              "https://api.bintray.com/content/codacy/Binaries/$(cat .version)/$file"
+            curl -T "$file" -ucodacy-ci:"$BINTRAY_API_KEY" -H "X-Bintray-Package:<< parameters.package >>" -H "X-Bintray-Version:$(cat ~/workdir/.version)" \
+              "https://api.bintray.com/content/codacy/Binaries/$(cat ~/workdir/.version)/$file"
           done
-          curl -X POST -ucodacy-ci:"$BINTRAY_API_KEY" "https://api.bintray.com/content/codacy/Binaries/<< parameters.package >>/$(cat .version)/publish"
+          curl -X POST -ucodacy-ci:"$BINTRAY_API_KEY" "https://api.bintray.com/content/codacy/Binaries/<< parameters.package >>/$(cat ~/workdir/.version)/publish"
         fi
