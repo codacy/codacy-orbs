@@ -9,6 +9,14 @@ parameters:
     type: boolean
     default: false
     description: Updates git submodules if true
+  dev_branch:
+    type: string
+    default: "dev"
+    description: Overrides the default dev branch (dev).
+  release_branch:
+    type: string
+    default: "master"
+    description: Overrides the default release branch (master).
 
 executor: versioning
 
@@ -17,7 +25,7 @@ steps:
 
   - run:
       name: Set version
-      command: /bin/git-version > .version
+      command: /bin/git-version -b parameters.dev_branch -rb parameters.release_branch > .version
 
   - run:
       name: Current version
