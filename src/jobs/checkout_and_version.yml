@@ -25,7 +25,7 @@ steps:
 
   - run:
       name: Set version
-      command: /bin/git-version -b parameters.dev_branch -rb parameters.release_branch > .version
+      command: /bin/git-version --dev-branch=<<parameters.dev_branch>> --release-branch=<<parameters.release_branch>> > .version
 
   - run:
       name: Current version
