@@ -1,7 +1,13 @@
 description: >
   A docker image to run AWS commands
 
+parameters:
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
 docker:
   - image: codacy/ci-aws:3.8.0
 
-working_directory: ~/workdir
+working_directory: <<parameters.working_directory>>

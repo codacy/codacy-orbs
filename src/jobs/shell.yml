@@ -1,7 +1,5 @@
 description: "A default job executed in the shell"
 
-executor: machine
-
 parameters:
   cmd:
     description: "The command to run"
@@ -10,10 +8,18 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
+executor:
+  name: machine
+  working_directory: <<parameters.working_directory>>
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: ./
   - run:
       name: Shell command - << parameters.cmd >>
       command: << parameters.cmd >>
@@ -21,6 +27,6 @@ steps:
       condition: << parameters.persist_to_workspace >>
       steps:
         - persist_to_workspace:
-            root: ~/
+            root: ./
             paths:
-              - workdir/*
+              - '*'
