@@ -1,6 +1,5 @@
 description: >
-  A machine executor that can run Docker commands:
-  https://circleci.com/docs/2.0/executor-types/#using-machine
+  A docker image to publish GitHub releases
 
 parameters:
   working_directory:
@@ -8,7 +7,7 @@ parameters:
     default: "~/workdir"
     description: Overrides the default working_directory.
 
-machine:
-  image: ubuntu-1604:201903-01
+docker:
+  - image: cibuilds/github:0.12.2
 
 working_directory: <<parameters.working_directory>>

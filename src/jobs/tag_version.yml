@@ -1,10 +1,18 @@
 description: Tag the version in the VCS provider
 
-executor: machine
+parameters:
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
+executor:
+  name: machine
+  working_directory: <<parameters.working_directory>>
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: <<parameters.working_directory>>
   - add_ssh_keys:
       fingerprints:
         - "df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5"
