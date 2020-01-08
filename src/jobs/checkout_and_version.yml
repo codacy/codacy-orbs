@@ -17,8 +17,14 @@ parameters:
     type: string
     default: "master"
     description: Overrides the default release branch (master).
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
 
-executor: versioning
+executor:
+  name: versioning
+  working_directory: <<parameters.working_directory>>
 
 steps:
   - checkout
@@ -46,6 +52,6 @@ steps:
             command: git submodule update --init --recursive
 
   - persist_to_workspace:
-      root: ~/
+      root: ./
       paths:
-        - workdir/*
+        - '*'

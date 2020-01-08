@@ -1,7 +1,5 @@
 description: "A default sbt job"
 
-executor: machine
-
 parameters:
   cmd:
     description: "SBT command to run"
@@ -32,13 +30,22 @@ parameters:
     description: "Version of SBT to install. If empty, the system one will be used"
     type: string
     default: ""
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
+executor:
+  name: machine
+  working_directory: <<parameters.working_directory>>
+
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
   AWS_DEFAULT_REGION: << parameters.region >>
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: ./
   - when:
       condition: << parameters.install_sbt_version >>
       steps:
@@ -61,6 +68,6 @@ steps:
       condition: << parameters.persist_to_workspace >>
       steps:
         - persist_to_workspace:
-            root: ~/
+            root: ./
             paths:
-              - workdir/*
+              - '*'
