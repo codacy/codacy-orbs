@@ -52,7 +52,8 @@ jobs:
   lint:
     <<: *lint_job
     steps:
-      - checkout
+      - attach_workspace:
+          at: ~/
       - run:
           name: output default .yamllint file in the working directory
           command: |
@@ -73,16 +74,17 @@ workflows:
 
   pack_validate_publish:
     jobs:
-      - lint
-
       - codacy/checkout_and_version:
           name: checkout_and_version
+
+      - lint:
+          requires:
+            - checkout_and_version
 
       - pack_and_validate:
           context: CodacyCircleCI
           requires:
             - checkout_and_version
-            - lint
 
       - codacy/tag_version:
           name: tag_version
