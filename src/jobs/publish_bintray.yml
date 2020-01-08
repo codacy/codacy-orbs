@@ -1,7 +1,5 @@
 description: Publish to Bintray
 
-executor: machine
-
 parameters:
   path:
     type: string
@@ -9,10 +7,18 @@ parameters:
   package:
     type: string
     description: Bintray package name
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
+executor:
+  name: machine
+  working_directory: <<parameters.working_directory>>
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: <<parameters.working_directory>>
   - run:
       name: Publish to Bintray
       command: |

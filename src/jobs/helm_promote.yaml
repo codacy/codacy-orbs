@@ -1,7 +1,5 @@
 description: "Set version and publish to chart museum"
 
-executor: aws
-
 parameters:
   version:
     description: "Name of the helm chart"
@@ -32,9 +30,18 @@ parameters:
     type: string
     default: ${CHARTS_REPO_PASS}
 
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
+executor:
+  name: aws
+  working_directory: <<parameters.working_directory>>
+
 steps:
   - attach_workspace:
-      at: ~/
+      at: <<parameters.working_directory>>
 
   - deploy:
       name: Push to charts museum
