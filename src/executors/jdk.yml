@@ -1,7 +1,13 @@
 description: >
   A docker image to use JDK 8
 
+parameters:
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
 docker:
   - image: circleci/openjdk:8-jdk
 
-working_directory: ~/workdir
+working_directory: <<parameters.working_directory>>

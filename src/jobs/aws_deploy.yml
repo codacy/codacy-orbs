@@ -1,7 +1,5 @@
 description: "A shell deploy command to be executed with AWS credentials on the aws executor"
 
-executor: aws
-
 parameters:
   cmd:
     description: "The command to run"
@@ -14,6 +12,14 @@ parameters:
     description: "The AWS region where to deploy"
     type: string
     default: eu-west-1
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
+executor:
+  name: aws
+  working_directory: <<parameters.working_directory>>
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -21,7 +27,7 @@ environment:
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: <<parameters.working_directory>>
 
   - run_aws:
       cmd_name: AWS deploy command - << parameters.cmd >>
