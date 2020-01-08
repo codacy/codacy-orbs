@@ -1,16 +1,21 @@
 description: Publish Release on Github
 
-docker:
-  - image: cibuilds/github:0.12.2
-
 parameters:
   path:
     type: string
     description: Path to the artifacts folder
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
+executor:
+  name: github
+  working_directory: <<parameters.working_directory>>
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: <<parameters.working_directory>>
   - run:
       name: Publish Release on Github
       command: |
@@ -18,4 +23,4 @@ steps:
         if [ "${CIRCLE_BRANCH}" != "master" ]; then
           GHR_FLAGS+="-prerelease"
         fi
-        ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${GHR_FLAGS} -delete $(cat ~/workdir/.version) << parameters.path >>
+        ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} ${GHR_FLAGS} -delete $(cat .version) << parameters.path >>

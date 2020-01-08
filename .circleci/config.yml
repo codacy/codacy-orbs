@@ -73,10 +73,10 @@ workflows:
 
   pack_validate_publish:
     jobs:
-      - lint
-
       - codacy/checkout_and_version:
           name: checkout_and_version
+
+      - lint
 
       - pack_and_validate:
           context: CodacyCircleCI
