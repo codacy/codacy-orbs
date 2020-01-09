@@ -38,7 +38,7 @@ environment:
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: ~/workdir
   - when:
       condition: << parameters.install_sbt_version >>
       steps:
@@ -61,6 +61,6 @@ steps:
       condition: << parameters.persist_to_workspace >>
       steps:
         - persist_to_workspace:
-            root: ~/
+            root: ~/workdir
             paths:
-              - workdir/*
+              - '*'

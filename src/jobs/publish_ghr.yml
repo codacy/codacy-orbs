@@ -10,7 +10,7 @@ parameters:
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: ~/workdir
   - run:
       name: Publish Release on Github
       command: |
