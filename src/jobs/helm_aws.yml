@@ -2,8 +2,6 @@ description: >
     "A helm command to be executed, optionally with AWS credentials on the AWS executor
     with kubeconfig created for the provided cluster"
 
-executor: aws
-
 parameters:
   cmd:
     description: "The command to run"
@@ -25,13 +23,15 @@ parameters:
     type: string
     default: "codacy-eks-cluster"
 
+executor: aws
+
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
   AWS_DEFAULT_REGION: << parameters.region >>
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: ~/workdir
 
   - when:
       condition: << parameters.use_cluster>>

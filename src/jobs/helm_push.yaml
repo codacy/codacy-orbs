@@ -1,7 +1,5 @@
 description: "Set version and publish to chart museum"
 
-executor: aws
-
 parameters:
   chart_name:
     description: "Name of the helm chart"
@@ -19,13 +17,15 @@ parameters:
     type: string
     default: ""
 
+executor: aws
+
 environment:
   CHART_NAME: << parameters.chart_name >>
   HELM_DIR: << parameters.helm_dir >>
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: ~/workdir
   - run:
       name: Set image tag and version using semver
       command: |

@@ -1,7 +1,5 @@
 description: "A default job executed in the shell"
 
-executor: machine
-
 parameters:
   cmd:
     description: "The command to run"
@@ -11,9 +9,11 @@ parameters:
     type: boolean
     default: false
 
+executor: machine
+
 steps:
   - attach_workspace:
-      at: ~/
+      at: ~/workdir
   - run:
       name: Shell command - << parameters.cmd >>
       command: << parameters.cmd >>
@@ -21,6 +21,6 @@ steps:
       condition: << parameters.persist_to_workspace >>
       steps:
         - persist_to_workspace:
-            root: ~/
+            root: ~/workdir
             paths:
-              - workdir/*
+              - '*'
