@@ -12,7 +12,7 @@ parameters:
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: ~/workdir
   - run:
       name: Publish to Bintray
       command: |

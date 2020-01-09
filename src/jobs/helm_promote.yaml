@@ -1,7 +1,5 @@
 description: "Set version and publish to chart museum"
 
-executor: aws
-
 parameters:
   version:
     description: "Name of the helm chart"
@@ -32,9 +30,11 @@ parameters:
     type: string
     default: ${CHARTS_REPO_PASS}
 
+executor: aws
+
 steps:
   - attach_workspace:
-      at: ~/
+      at: ~/workdir
 
   - deploy:
       name: Push to charts museum

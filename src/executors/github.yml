@@ -1,0 +1,7 @@
+description: >
+  A docker image to publish GitHub releases
+
+docker:
+  - image: cibuilds/github:0.12.2
+
+working_directory: ~/workdir
