@@ -1,0 +1,13 @@
+description: >
+  A docker image to publish GitHub releases
+
+parameters:
+  working_directory:
+    type: string
+    default: "~/workdir"
+    description: Overrides the default working_directory.
+
+docker:
+  - image: cibuilds/github:0.12.2
+
+working_directory: <<parameters.working_directory>>

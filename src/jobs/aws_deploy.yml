@@ -21,7 +21,7 @@ environment:
 
 steps:
   - attach_workspace:
-      at: ~/
+      at: ~/workdir
 
   - run_aws:
       cmd_name: AWS deploy command - << parameters.cmd >>
