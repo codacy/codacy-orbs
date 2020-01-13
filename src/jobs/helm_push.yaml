@@ -16,6 +16,10 @@ parameters:
     description: "Helm push options to be added"
     type: string
     default: ""
+  update_image_version:
+    description: "Helm update key image.tag in values.yaml"
+    type: boolean
+    default: true
 
 executor: aws
 
@@ -30,7 +34,9 @@ steps:
       name: Set image tag and version using semver
       command: |
         ytool -s appVersion "$(cat .version)" -s version "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/Chart.yaml" -e
-        ytool -s image.tag "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/values.yaml" -e
+        if [ "<< parameters.update_image_version >>" = "true" ]; then
+          ytool -s image.tag "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/values.yaml" -e
+        fi
         git --no-pager diff --no-color
 
   - deploy:
