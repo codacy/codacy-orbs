@@ -1,0 +1,75 @@
+description: "Deploy a custom codacy chart"
+
+parameters:
+  release_name:
+    description: "Helm release name"
+    type: string
+    default: "codacy"
+  namespace:
+    description: "Namespace for the codacy installation"
+    type: string
+    default: "codacy"
+  codacy_url:
+    description: "Codacy url"
+    type: string
+    default: "http://k8s.dev.codacy.org"
+  use_unstable_components:
+    description: "Use components from the unstable chart museum"
+    type: boolean
+    default: false
+  deployments:
+    description: "Deployments for which the pods should be rotated"
+    type: string
+    default: "all"
+  kubeconfig_cmd:
+    description: "The command that sets the target cluster onto kubeconfig"
+    type: string
+    default: ""
+
+executor: do
+
+environment:
+  RELEASE_NAME: << parameters.release_name >>
+  NAMESPACE: << parameters.namespace >>
+  CODACY_URL: << parameters.codacy_url >>
+  DOKS_CLUSTER_NAME: codacy-doks-cluster-dev
+  DEPLOYMENTS: << parameters.deployments >>
+steps:
+  - add_ssh_keys:
+      fingerprints:
+        - "df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5"
+  - deploy:
+      name: Checkout codacy chart
+      command: |
+        ssh-keyscan github.com >> ~/.ssh/known_hosts
+        git clone git@github.com:codacy/chart.git
+  - when:
+      condition: <<parameters.use_unstable_components>>
+      steps:
+        - deploy:
+            name: Patch worker version
+            command: ytool -f "chart/codacy/values.yaml" -s worker-manager.config.codacy.worker.image "dev" -e
+        - deploy:
+            name: Swap requirements files
+            command: |
+                mv chart/codacy/requirements.yaml chart/codacy/requirements_old.yaml
+                mv chart/codacy/requirements-dev.yaml chart/codacy/requirements.yaml
+  - deploy:
+      name: helm dep up
+      command: make -C chart/ update_dependencies
+  - deploy:
+      name: Set kubeconfig
+      command: |
+        <<parameters.kubeconfig_cmd>>
+  - deploy:
+      name: Poll for installation availability
+      command: |
+        helm plugin install https://github.com/codacy/helm-poll/releases/download/latest/helm-poll-linux.tgz
+        helm poll -r $RELEASE_NAME
+  - deploy:
+      name: Install bespoke codacy chart
+      command: |
+          echo "Installing $RELEASE_NAME: $NAMESPACE"
+          [ "$DEPLOYMENTS" == "all" ] && make -C chart/.doks/ deploy_to_doks_atomic RELEASE_NAME=$RELEASE_NAME NAMESPACE=$NAMESPACE CODACY_URL=$CODACY_URL
+          [ "$DEPLOYMENTS" != "all" ] && make -C chart/.doks/ deploy_to_doks_atomic RELEASE_NAME=$RELEASE_NAME NAMESPACE=$NAMESPACE CODACY_URL=$CODACY_URL DEPLOYMENTS=$DEPLOYMENTS
+
