@@ -1,0 +1,92 @@
+description: "Set artifact version and helm repository on requirements.yaml"
+
+parameters:
+  release_name:
+    description: "Helm release name"
+    type: string
+    default: "codacy-unstable"
+  helm_channel:
+    description: "Helm channel from which to get the artifact"
+    type: string
+    default: "unstable"
+  namespace:
+    description: "Namespace for the codacy installation"
+    type: string
+    default: "codacy-unstable"
+  set_kubeconfig_command:
+    description: "Command (shell) to set the kubeconfig context onto which codacy will be installed"
+    type: string
+    default: ""
+  codacy_url:
+    description: "Codacy url for git hooks"
+    type: string
+    default: "http://k8s.unstable.dev.codacy.org"
+
+executor: aws
+
+environment:
+  RELEASE_NAME: << parameters.release_name >>
+  NAMESPACE: << parameters.namespace >>
+  SET_KUBECONFIG_COMMAND: <<parameters.set_kubeconfig_command>>
+  CHANNEL: << parameters.helm_channel >>
+  HELM_REPO: https://charts.codacy.com/<< parameters.helm_channel >>
+  CODACY_URL: << parameters.codacy_url >>
+steps:
+  - run:
+      name: Checkout codacy chart
+      command: |
+        git clone https://github.com/codacy/chart.git
+  - run:
+      name: Patch artifact version and helm repo
+      command: |
+        pip3 install yq
+        DEPENDENCIES=$(yq .dependencies chart/codacy/requirements.yaml | jq '.[]|select(.git)|.name' |sed "s/\"//g")
+        for dependency in ${DEPENDENCIES[@]}
+        do
+            version=$(curl -s $HELM_REPO/api/charts/$dependency | jq '. | sort_by(.created) | .[-1].version' | sed "s/\"//g")
+            echo "$dependency: $version"
+            ytool -f "chart/codacy/requirements.yaml" --set-string-keyvalue dependencies name $dependency version $version --edit-file
+            ytool -f "chart/codacy/requirements.yaml" --set-string-keyvalue dependencies name $dependency repository $HELM_REPO --edit-file
+        done
+  - run:
+      name: Patch worker version
+      command: ytool -f "chart/codacy/values.yaml" -s worker-manager.config.codacy.worker.image "$CHANNEL" -e
+  - deploy:
+      name: Set target cluster
+      command: eval $SET_KUBECONFIG_COMMAND
+  - deploy:
+      name: Poll for installation
+      command: |
+        TIMEOUT_IN_SECS=300
+        POLL_INTERVAL_IN_SECS=5
+        release=$(helm list | awk '{print $1}' | tail -n +2 | grep $RELEASE_NAME)
+        if [ "$release" == "$RELEASE_NAME" ]; then
+                echo "Release '$RELEASE_NAME' found."
+                for i in `seq 1 $(($TIMEOUT_IN_SECS / $POLL_INTERVAL_IN_SECS))`; do
+                    result=$(helm history $RELEASE_NAME --max=1 -o json)
+                    status=$(echo $result | jq .[].status)
+                    chart=$(echo $result | jq .[].chart)
+                    revision=$(echo $result | jq .[].revision)
+                    if [ "\"DEPLOYED\"" != "$status" ]; then
+                        echo "$chart: $revision is $status... waiting..."
+                    else
+                        exit 0
+                    fi
+                done
+                echo "Could not install $RELEASE_NAME! Please check the cluster state."
+                exit 1
+        fi
+  - deploy:
+      name: Install bespoke codacy chart
+      command: |
+          echo "Installing $RELEASE_NAME: $NAMESPACE"
+          make -C chart/.doks/ deploy_to_doks RELEASE_NAME=$RELEASE_NAME NAMESPACE=$NAMESPACE CODACY_URL=$CODACY_URL
+  - deploy:
+      name: Validate deployments
+      command: |
+            set -e
+            DEPLOYMENTS=$(kubectl get deployments -n "$NAMESPACE" | awk '{print "deployment/"$1}' | tail -n +2 )
+            for DEPLOYMENT in ${DEPLOYMENTS[@]}
+            do
+                kubectl rollout status -n "$NAMESPACE" --timeout=5m --watch "$DEPLOYMENT"
+            done
