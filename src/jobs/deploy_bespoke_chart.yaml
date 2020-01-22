@@ -1,0 +1,74 @@
+description: "Set artifact version and helm repository on requirements.yaml"
+
+parameters:
+  release_name:
+    description: "Helm release name"
+    type: string
+    default: "codacy"
+  helm_channel:
+    description: "Helm channel from which to get the artifact"
+    type: string
+    default: "unstable"
+  namespace:
+    description: "Namespace for the codacy installation"
+    type: string
+    default: "codacy"
+  target_cluster_command:
+    description: "Command (shell) to set the target cluster onto which codacy will be installed"
+    type: string
+    default: ""
+
+executor: aws
+
+environment:
+  RELEASE: << parameters.release_name >>
+  NAMESPACE: << parameters.namespace >>
+  SET_TARGET_CLUSTER_COMMAND: <<parameters.target_cluster_command>>
+  CHANNEL: << parameters.helm_channel >>
+  HELM_REPO: https://charts.codacy.com/<< parameters.helm_channel >>
+
+steps:
+  - run:
+      name: Checkout codacy chart
+      command: |
+        git clone https://github.com/codacy/chart.git
+  - run:
+      name: Patch artifact version and helm repo
+      command: |
+        pip3 install yq
+        DEPENDENCIES=$(yq .dependencies chart/codacy/requirements.yaml | jq .[].name |sed "s/\"//g" | grep -v "minio\|rabbitmq-ha\|postgresql\|log-router")
+        for dependency in ${DEPENDENCIES[@]}
+        do
+            version=$(curl -s $HELM_REPO/api/charts/$dependency | jq .[0].version | sed "s/\"//g")
+            echo "$dependency: $version"
+            ytool -f "chart/codacy/requirements.yaml" -k dependencies name $dependency version $version -e
+            ytool -f "chart/codacy/requirements.yaml" -k dependencies name $dependency repository $HELM_REPO -e
+        done
+  - run:
+      name: Patch worker version
+      command: ytool -f "chart/codacy/values.yaml" -s worker-manager.config.codacy.worker.image "$CHANNEL" -e
+  - deploy:
+      name: Set target cluster
+      command: eval $SET_TARGET_CLUSTER_COMMAND
+  - deploy:
+      name: Poll for installation
+      command: |
+        TIMEOUT_IN_SECS=300
+        POLL_INTERVAL_IN_SECS=5
+        for i in `seq 1 $(($TIMEOUT_IN_SECS / $POLL_INTERVAL_IN_SECS))`; do
+            result=$(helm history $RELEASE --max=1 -o json)
+            status=$(echo $result | jq .[].status)
+            chart=$(echo $result | jq .[].chart)
+            revision=$(echo $result | jq .[].revision)
+            if [ "\"DEPLOYED\"" != "$status" ]; then
+                echo "$chart: $revision is $status... waiting..."
+            else
+                exit 0
+            fi
+        done
+        echo "Could not install $RELEASE! Please check the cluster state."
+        exit 1
+  - deploy:
+      name: Install bespoke codacy chart
+      command: |
+          make -C chart/codacy/.doks/ deploy_to_doks RELEASE=$RELEASE NAMESPACE=$NAMESPACE
