@@ -1,0 +1,70 @@
+description: "Set artifact version and helm repository on requirements.yaml"
+
+parameters:
+  artifact:
+    description: "Helm artifact name to be patched"
+    type: string
+    default: "codacy"
+  release_name:
+    description: "Helm release name"
+    type: string
+    default: "codacy"
+  helm_channel:
+    description: "Helm channel from which to get the artifact"
+    type: string
+    default: "unstable"
+  namespace:
+    description: "Namespace for the codacy installation"
+    type: string
+    default: "codacy"
+  target_cluster_command:
+    description: "Command (shell) to set the target cluster onto which codacy will be installed"
+    type: string
+    default: ""
+
+executor: aws
+
+environment:
+  NAME: << parameters.artifact >>
+  RELEASE: << parameters.release_name >>
+  NAMESPACE: << parameters.namespace >>
+  SET_TARGET_CLUSTER_COMMAND: <<parameters.target_cluster_command>>
+  HELM_REPO: https://charts.codacy.com/<< parameters.helm_channel >>
+
+steps:
+  - run:
+      name: Checkout codacy chart
+      command: git clone git@github.com:codacy/chart.git
+  - run:
+      name: Patch artifact version
+      command: |
+        VERSION=$(curl -s $HELM_REPO/api/charts/$NAME | jq .[0].version | sed "s/\"//g")
+        ytool -f "chart/codacy/requirements.yaml" -k dependencies name $NAME version $VERSION -e
+  - run:
+      name: Patch helm repository
+      command: ytool -f "chart/codacy/requirements.yaml" -k dependencies name $NAME repository $HELM_REPO -e
+  - deploy:
+      name: Set target cluster
+      command: $SET_TARGET_CLUSTER_COMMAND
+  - deploy:
+      name: Poll for installation
+      command: |
+        TIMEOUT_IN_SECS=300
+        POLL_INTERVAL_IN_SECS=5
+        for i in `seq 1 $(($TIMEOUT_IN_SECS / $POLL_INTERVAL_IN_SECS))`; do
+            result=$(helm history $RELEASE --max=1 -o json)
+            status=$(echo $result | jq .[].status)
+            chart=$(echo $result | jq .[].chart)
+            revision=$(echo $result | jq .[].revision)
+            if [ "\"DEPLOYED\"" != "$status" ]; then
+                echo "$chart: $revision is $status... waiting..."
+            else
+                exit 0
+            fi
+        done
+        echo "Could not install $RELEASE! Please check the cluster state."
+        exit 1
+  - deploy:
+      name: Install bespoke codacy chart
+      command: |
+          make -C codacy/.doks/ deploy_to_doks RELEASE=$RELEASE NAMESPACE=$NAMESPACE
