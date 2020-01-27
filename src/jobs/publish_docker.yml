@@ -4,50 +4,41 @@ executor: machine
 
 parameters:
   path:
-    type: string
     description: Path to the docker tar
+    type: string
     default: docker-image.tar
   docker_name:
-    type: string
     description: Name of the image stored in the archive
+    type: string
     default: $CIRCLE_PROJECT_REPONAME
   docker_tag:
-    type: string
     description: Tag of the image stored in the archive
+    type: string
     default: latest
-  docker_load:
-    type: boolean
-    description: Load docker images from path
-    default: false
   dev_branch:
+    description: Overrides the default dev branch (dev).
     type: string
     default: "dev"
-    description: Overrides the default dev branch (dev).
   release_branch:
+    description: Overrides the default release branch (master).
     type: string
     default: "master"
-    description: Overrides the default release branch (master).
   dev_tag:
+    description: Overrides the default dev branch docker tag (dev).
     type: string
     default: "dev"
-    description: Overrides the default dev branch docker tag (dev).
   release_tag:
+    description: Overrides the default release branch docker tag (latest).
     type: string
     default: "latest"
-    description: Overrides the default release branch docker tag (latest).
 
 steps:
   - attach_workspace:
       at: ~/workdir
-  - when:
-      condition: << parameters.docker_load >>
-      steps:
-        - run:
-            name: Load docker
-            command: docker load --input << parameters.path >>
   - run:
       name: Publish to Docker
       command: |
+        docker load --input "<< parameters.path >>"
         docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
         docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
         if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]; then
