@@ -54,3 +54,18 @@ usage:
             requires:
               - helm_push
             cmd: make -C .aws/ all VERSION=$(cat .version)
+
+        - codacy/microk8s_install:
+            name: k8s_1_15
+            requires:
+              - helm_deploy_to_aws_integration
+        - codacy/microk8s_install:
+            name: k8s_1_14
+            microk8s_channel: "1.14/stable"
+            requires:
+              - helm_deploy_to_aws_integration
+        - codacy/microk8s_install:
+            name: k8s_1_13
+            microk8s_channel: "1.13/stable"
+            requires:
+              - helm_deploy_to_aws_integration
