@@ -1,6 +1,26 @@
 description: "Install in microk8s"
 
 parameters:
+  codacy_version:
+    description: "Codacy version to install"
+    type: string
+    default: "latest"
+  codacy_helm_repo_name:
+    description: "Name of the helm repo from where to a codacy_version: codacy-stable, codacy-unstable, or codacy-incubator"
+    type: string
+    default: "codacy-stable"
+  use_chart_source:
+    description: "If true then install Codacy using the chart source"
+    type: boolean
+    default: true
+  clone_chart_source:
+    description: "If true then clone the chart source for later usage"
+    type: boolean
+    default: true
+  chart_dir_path:
+    description: "Path to the chart dir"
+    type: string
+    default: "chart/"
   chart_branch:
     description: "Codacy chart branch/tag/ref to install"
     type: string
@@ -21,32 +41,18 @@ parameters:
     description: "Wait for codacy to be ready (using 'wait_commands')"
     type: boolean
     default: true
-  install_commands:
-    description: "Commands used to install codacy to microk8s"
+  wait_ready_timeout:
+    description: "Time before exiting with error while waiting for Codacy pods to be ready"
+    type: integer
+    default: 1800
+  extra_preinstall_commands:
+    description: "Additional commands to run before installing codacy to microk8s"
     type: string
-    default: |
-      set -x
-      # add namespace and docker secret
-      sudo microk8s.kubectl create namespace codacy
-      sudo microk8s.kubectl create secret docker-registry docker-credentials --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD -n codacy
-
-      # install codacy
-      cd chart/
-      sudo helm dep up codacy/
-      sudo helm upgrade --install codacy codacy/ --namespace codacy -f ../microk8s-values.yaml
-  wait_commands:
-    description: "Commands used to wait for codacy to be ready"
+    default: ""
+  extra_postinstall_commands:
+    description: "Additional commands to run after installing codacy to microk8s"
     type: string
-    default: |
-      set -x
-      # wait for all pods to be ready (earlier versions don't have the userful '--all' flag)
-      if [[ "$(sudo microk8s.kubectl version --short --client | cut -d. -f2)" == "13" ]] ; then
-        sudo microk8s.kubectl wait --for=condition=Ready pods $(sudo microk8s.kubectl get pods -n codacy -o jsonpath='{.items[*].metadata.name}') -n codacy --timeout=1800s
-      else
-        sudo microk8s.kubectl wait --for=condition=Ready pods --all -n codacy --timeout=1800s
-      fi
-      # show state before exiting
-      sudo microk8s.kubectl get pods -n codacy
+    default: ""
   microk8s_values_content:
     description: "Content for microk8s-values.yaml, used to override chart default values"
     type: string
@@ -124,24 +130,88 @@ steps:
         END_VALUES
 
   - run:
-      name: Get chart and setup codacy helm repos
+      name: Setup helm repos
       command: |
         set -x
-        git clone https://github.com/codacy/chart.git
-        cd chart/
-        git checkout << parameters.chart_branch >>
-
         sudo helm repo add codacy-stable    https://charts.codacy.com/stable
         sudo helm repo add codacy-unstable  https://charts.codacy.com/unstable
         sudo helm repo add codacy-incubator https://charts.codacy.com/incubator
         sudo helm repo add codacy-external  https://charts.codacy.com/external
 
-  - deploy:
-      name: Install Codacy to microk8s
+  - when:
+      condition: << parameters.clone_chart_source >>
+      steps:
+        - run:
+            name: Get codacy chart
+            command: |
+              set -x
+              git clone https://github.com/codacy/chart.git
+              cd << parameters.chart_dir_path >>
+              git checkout << parameters.chart_branch >>
+
+  - run:
+      name: Add namespace and docker secret
       command: |
         set -x
         if [[ -z "$(echo $PATH | grep snap)" ]] ; then export PATH=$PATH:/snap/bin ; fi
-        << parameters.install_commands >>
-        <<# parameters.wait_ready >>
-        << parameters.wait_commands >>
-        <</ parameters.wait_ready >>
+
+        sudo microk8s.kubectl create namespace codacy
+        sudo microk8s.kubectl create secret docker-registry docker-credentials \
+          --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD -n codacy
+
+  - run:
+      name: Run additional pre-install commands (if any)
+      command: |
+        set -x
+        if [[ -z "$(echo $PATH | grep snap)" ]] ; then export PATH=$PATH:/snap/bin ; fi
+        << parameters.extra_preinstall_commands >>
+
+  - when:
+      condition: << parameters.use_chart_source >>
+      steps:
+        - deploy:
+            name: Install Codacy to microk8s from source
+            command: |
+              set -x
+              if [[ -z "$(echo $PATH | grep snap)" ]] ; then export PATH=$PATH:/snap/bin ; fi
+
+              cd << parameters.chart_dir_path >>
+              sudo helm dep up codacy/
+              sudo helm upgrade --install codacy codacy/ --namespace codacy -f ../microk8s-values.yaml
+
+  - unless:
+      condition: << parameters.use_chart_source >>
+      steps:
+        - deploy:
+            name: Install Codacy to microk8s from chart repo
+            command: |
+              set -x
+              if [[ "<< parameters.codacy_version >>" == "latest" ]] ; then
+                sudo helm upgrade --install codacy << parameters.codacy_helm_repo_name >>/codacy --namespace codacy -f microk8s-values.yaml
+              else
+                sudo helm upgrade --install codacy << parameters.codacy_helm_repo_name >>/codacy --namespace codacy -f microk8s-values.yaml --version << parameters.codacy_version >>
+              fi
+
+  - when:
+      condition: << parameters.wait_ready >>
+      steps:
+        - run:
+            name: Wait for all Codacy pods to be ready
+            command: |
+              # earlier kubectl versions don't have the userful '--all' flag
+              if [[ "$(sudo microk8s.kubectl version --short --client | cut -d. -f2)" == "13" ]] ; then
+                CODACY_PODS=$(sudo microk8s.kubectl get pods -n codacy -o jsonpath='{.items[*].metadata.name}')
+                sudo microk8s.kubectl wait --for=condition=Ready pods ${CODACY_PODS} -n codacy --timeout=<< parameters.wait_ready_timeout >>s
+              else
+                sudo microk8s.kubectl wait --for=condition=Ready pods --all -n codacy --timeout=<< parameters.wait_ready_timeout >>s
+              fi
+
+              # show state before exiting
+              sudo microk8s.kubectl get pods -n codacy
+
+  - run:
+      name: Run additional post-install commands (if any)
+      command: |
+        set -x
+        if [[ -z "$(echo $PATH | grep snap)" ]] ; then export PATH=$PATH:/snap/bin ; fi
+        << parameters.extra_postinstall_commands >>
