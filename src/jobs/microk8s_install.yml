@@ -1,30 +1,17 @@
-description: "Install in microk8s"
+description: "Install a chart to microk8s"
 
 parameters:
-  codacy_version:
-    description: "Codacy version to install"
+  chart_name:
+    description: "Name of the chart to install"
     type: string
-    default: "latest"
-  codacy_helm_repo_name:
-    description: "Name of the helm repo from where to a codacy_version: codacy-stable, codacy-unstable, or codacy-incubator"
+    default: "codacy"
+  chart_version:
+    description: "Chart version to install. If empty then the latest is installed"
     type: string
-    default: "codacy-stable"
-  use_chart_source:
-    description: "If true then install Codacy using the chart source"
-    type: boolean
-    default: true
-  clone_chart_source:
-    description: "If true then clone the chart source for later usage"
-    type: boolean
-    default: true
-  chart_dir_path:
-    description: "Path to the chart dir"
+    default: ""
+  helm_repo:
     type: string
-    default: "chart/"
-  chart_branch:
-    description: "Codacy chart branch/tag/ref to install"
-    type: string
-    default: "master"
+    default: "https://charts.codacy.com/stable"
   helm_version:
     description: "Helm version used to install the chart"
     type: string
@@ -33,26 +20,10 @@ parameters:
     description: "Microk8s version used"
     type: string
     default: "1.15/stable"
-  microk8s_extra_addons:
-    description: "Additional microk8s addons to install"
+  namespace:
+    description: "Namespace where to install the chart"
     type: string
-    default: ""
-  wait_ready:
-    description: "Wait for codacy to be ready (using 'wait_commands')"
-    type: boolean
-    default: true
-  wait_ready_timeout:
-    description: "Time before exiting with error while waiting for Codacy pods to be ready"
-    type: integer
-    default: 1800
-  extra_preinstall_commands:
-    description: "Additional commands to run before installing codacy to microk8s"
-    type: string
-    default: ""
-  extra_postinstall_commands:
-    description: "Additional commands to run after installing codacy to microk8s"
-    type: string
-    default: ""
+    default: "codacy"
   microk8s_values_content:
     description: "Content for microk8s-values.yaml, used to override chart default values"
     type: string
@@ -74,7 +45,6 @@ parameters:
         replicaCount: 1
 
 executor: machine
-resource_class: large
 
 steps:
   - attach_workspace:
@@ -83,8 +53,6 @@ steps:
   - run:
       name: Setup microk8s and helm
       command: |
-        set -x
-
         # install storage addon dependencies
         sudo apt update && sudo apt install nfs-common -y
 
@@ -96,7 +64,7 @@ steps:
         sudo snap install microk8s --classic --channel << parameters.microk8s_channel >>
         if [[ -z "$(echo $PATH | grep snap)" ]] ; then export PATH=$PATH:/snap/bin ; fi
         sudo microk8s.start && sudo microk8s.status --wait-ready
-        sudo microk8s.enable ingress dns storage << parameters.microk8s_extra_addons >> && sudo microk8s.status --wait-ready
+        sudo microk8s.enable ingress dns storage && sudo microk8s.status --wait-ready
 
         # restart to make sure the apparmor profile is correctly created
         # see https://github.com/ubuntu/microk8s/issues/493#issuecomment-498167435
@@ -124,94 +92,15 @@ steps:
   - run:
       name: Create values file
       command: |
-        set -x
         cat \<< END_VALUES > microk8s-values.yaml
         << parameters.microk8s_values_content >>
         END_VALUES
 
-  - run:
-      name: Setup helm repos
+  - deploy:
+      name: Install to microk8s from chart repo
       command: |
-        set -x
-        sudo helm repo add codacy-stable    https://charts.codacy.com/stable
-        sudo helm repo add codacy-unstable  https://charts.codacy.com/unstable
-        sudo helm repo add codacy-incubator https://charts.codacy.com/incubator
-        sudo helm repo add codacy-external  https://charts.codacy.com/external
+        sudo helm repo add default << parameters.helm_repo >>
 
-  - when:
-      condition: << parameters.clone_chart_source >>
-      steps:
-        - run:
-            name: Get codacy chart
-            command: |
-              set -x
-              git clone https://github.com/codacy/chart.git
-              cd << parameters.chart_dir_path >>
-              git checkout << parameters.chart_branch >>
-
-  - run:
-      name: Add namespace and docker secret
-      command: |
-        set -x
-        if [[ -z "$(echo $PATH | grep snap)" ]] ; then export PATH=$PATH:/snap/bin ; fi
-
-        sudo microk8s.kubectl create namespace codacy
-        sudo microk8s.kubectl create secret docker-registry docker-credentials \
-          --docker-username=$DOCKER_USERNAME --docker-password=$DOCKER_PASSWORD -n codacy
-
-  - run:
-      name: Run additional pre-install commands (if any)
-      command: |
-        set -x
-        if [[ -z "$(echo $PATH | grep snap)" ]] ; then export PATH=$PATH:/snap/bin ; fi
-        << parameters.extra_preinstall_commands >>
-
-  - when:
-      condition: << parameters.use_chart_source >>
-      steps:
-        - deploy:
-            name: Install Codacy to microk8s from source
-            command: |
-              set -x
-              if [[ -z "$(echo $PATH | grep snap)" ]] ; then export PATH=$PATH:/snap/bin ; fi
-
-              cd << parameters.chart_dir_path >>
-              sudo helm dep up codacy/
-              sudo helm upgrade --install codacy codacy/ --namespace codacy -f ../microk8s-values.yaml
-
-  - unless:
-      condition: << parameters.use_chart_source >>
-      steps:
-        - deploy:
-            name: Install Codacy to microk8s from chart repo
-            command: |
-              set -x
-              if [[ "<< parameters.codacy_version >>" == "latest" ]] ; then
-                sudo helm upgrade --install codacy << parameters.codacy_helm_repo_name >>/codacy --namespace codacy -f microk8s-values.yaml
-              else
-                sudo helm upgrade --install codacy << parameters.codacy_helm_repo_name >>/codacy --namespace codacy -f microk8s-values.yaml --version << parameters.codacy_version >>
-              fi
-
-  - when:
-      condition: << parameters.wait_ready >>
-      steps:
-        - run:
-            name: Wait for all Codacy pods to be ready
-            command: |
-              # earlier kubectl versions don't have the userful '--all' flag
-              if [[ "$(sudo microk8s.kubectl version --short --client | cut -d. -f2)" == "13" ]] ; then
-                CODACY_PODS=$(sudo microk8s.kubectl get pods -n codacy -o jsonpath='{.items[*].metadata.name}')
-                sudo microk8s.kubectl wait --for=condition=Ready pods ${CODACY_PODS} -n codacy --timeout=<< parameters.wait_ready_timeout >>s
-              else
-                sudo microk8s.kubectl wait --for=condition=Ready pods --all -n codacy --timeout=<< parameters.wait_ready_timeout >>s
-              fi
-
-              # show state before exiting
-              sudo microk8s.kubectl get pods -n codacy
-
-  - run:
-      name: Run additional post-install commands (if any)
-      command: |
-        set -x
-        if [[ -z "$(echo $PATH | grep snap)" ]] ; then export PATH=$PATH:/snap/bin ; fi
-        << parameters.extra_postinstall_commands >>
+        # if chart_version is an empty string then the latest version of the chart is installed
+        sudo helm install --name << parameters.chart_name >> default/<< parameters.chart_name >> \
+          --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>"

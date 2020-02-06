@@ -56,32 +56,18 @@ usage:
             cmd: make -C .aws/ all VERSION=$(cat .version)
 
         - codacy/microk8s_install:
-            # simple install from chart source using defaults
+            # simple codacy install from chart source using defaults
             name: install_micork8s
             requires:
               - helm_deploy_to_aws_integration
         - codacy/microk8s_install:
-            # install a given feature branch from chart source
-            # using selected versions for microk8s and helm
+            # install a given chart using selected versions for microk8s and helm, to a custom namespace
             name: install_micork8s_versions
+            chart_name: mariadb
+            chart_version: "7.3.6"
+            helm_repo: "https://kubernetes-charts.storage.googleapis.com"
             microk8s_channel: "1.14/stable"
+            namespace: something
             helm_version: "v2.16.1"
-            chart_branch: "my-feature-branch"
-            requires:
-              - helm_deploy_to_aws_integration
-        - codacy/microk8s_install:
-            # install the latest published chart, skip waiting for all pods to be ready
-            name: install_micork8s_latest_published
-            use_chart_source: false
-            wait_ready: false
-            requires:
-              - helm_deploy_to_aws_integration
-        - codacy/microk8s_install:
-            # install a given published chart
-            name: install_micork8s_chart_version
-            # by default the stable charts repo is used, if you want another one set it using, for instance
-            # codacy_helm_repo_name: codacy-incubator
-            codacy_version: "0.4.0"
-            use_chart_source: false
             requires:
               - helm_deploy_to_aws_integration
