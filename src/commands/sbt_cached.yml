@@ -13,15 +13,19 @@ parameters:
     description: "Save the cache after the command is executed"
     type: boolean
     default: true
+  cache_prefix:
+    description: "The prefix of cache to be used"
+    type: string
+    default: sbt-new-cache
 
 steps:
 
   - restore_cache:
       keys:
-        - sbt-new-cache-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
-        - sbt-new-cache-{{ .Branch }}-{{ checksum "build.sbt" }}
-        - sbt-new-cache-{{ .Branch }}
-        - sbt-new-cache
+        - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
+        - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}
+        - << parameters.cache_prefix >>-{{ .Branch }}
+        - << parameters.cache_prefix >>
 
   - when:
       condition: <<parameters.cmd_name>>
@@ -48,7 +52,7 @@ steps:
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
 
         - save_cache:
-            key: sbt-new-cache-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
+            key: << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
             paths:
               - "~/.ivy2"
               - "~/.sbt"
