@@ -18,10 +18,10 @@ steps:
 
   - restore_cache:
       keys:
-        - sbt-cache-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
-        - sbt-cache-{{ .Branch }}-{{ checksum "build.sbt" }}
-        - sbt-cache-{{ .Branch }}
-        - sbt-cache
+        - sbt-new-cache-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
+        - sbt-new-cache-{{ .Branch }}-{{ checksum "build.sbt" }}
+        - sbt-new-cache-{{ .Branch }}
+        - sbt-new-cache
 
   - when:
       condition: <<parameters.cmd_name>>
@@ -48,7 +48,7 @@ steps:
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
 
         - save_cache:
-            key: sbt-cache-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
+            key: sbt-new-cache-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
             paths:
               - "~/.ivy2"
               - "~/.sbt"
