@@ -50,7 +50,7 @@ steps:
         - save_cache:
             key: sbt-cache-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
             paths:
-              - "~/.ivy2/cache"
+              - "~/.ivy2"
               - "~/.sbt"
               - "~/.m2"
-              - "~/.cache/coursier/v1"
+              - "~/.cache"
