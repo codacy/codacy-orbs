@@ -58,3 +58,5 @@ steps:
               - "~/.sbt"
               - "~/.m2"
               - "~/.cache"
+              - "target"
+              - "*/target"
