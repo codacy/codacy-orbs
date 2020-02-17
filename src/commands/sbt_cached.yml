@@ -16,7 +16,7 @@ parameters:
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
-    default: sbt-new-cache
+    default: sbt-cache-022020
 
 steps:
 
