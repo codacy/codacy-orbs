@@ -56,16 +56,18 @@ usage:
             cmd: make -C .aws/ all VERSION=$(cat .version)
 
         - codacy/microk8s_install:
-            name: k8s_1_15
+            # simple codacy install from chart source using defaults
+            name: install_micork8s
             requires:
               - helm_deploy_to_aws_integration
         - codacy/microk8s_install:
-            name: k8s_1_14
+            # install a given chart using selected versions for microk8s and helm, to a custom namespace
+            name: install_micork8s_versions
+            chart_name: mariadb
+            chart_version: "7.3.6"
+            helm_repo: "https://kubernetes-charts.storage.googleapis.com"
             microk8s_channel: "1.14/stable"
-            requires:
-              - helm_deploy_to_aws_integration
-        - codacy/microk8s_install:
-            name: k8s_1_13
-            microk8s_channel: "1.13/stable"
+            namespace: something
+            helm_version: "v2.16.1"
             requires:
               - helm_deploy_to_aws_integration
