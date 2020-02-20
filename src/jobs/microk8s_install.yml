@@ -27,30 +27,19 @@ parameters:
   microk8s_values_content:
     description: "Content for microk8s-values.yaml, used to override chart default values"
     type: string
-    default: |
-      global:
-        imagePullSecrets:
-          - name: docker-credentials
-        play:
-          cryptoSecret: "TEST_STRING"
-        akka:
-          sessionSecret: "TEST_STRING"
-        filestore:
-          contentsSecret: "TEST_STRING"
-          uuidSecret: "TEST_STRING"
-        cacheSecret: "TEST_STRING"
-      listener:
-        persistence:
-          claim:
-            size: 8Gi
-        nfsserverprovisioner:
-          persistence:
-            size: 10Gi
-      minio:
-        persistence:
-          size: 10Gi
-      rabbitmq-ha:
-        replicaCount: 1
+    default: ""
+  microk8s_timeout:
+    description: "Time to wait for microk8s commands"
+    type: integer
+    default: 180
+  kubectl_timeout:
+    description: "Time to wait for kubectl commands"
+    type: integer
+    default: 300
+  helm_timeout:
+    description: "Time to wait for helm commands"
+    type: integer
+    default: 300
 
 executor: machine
 resource_class: large
@@ -72,21 +61,37 @@ steps:
         # install microk8s and selected addons
         sudo snap install microk8s --classic --channel << parameters.microk8s_channel >>
         export PATH=$PATH:/snap/bin
-        sudo microk8s.start && sudo microk8s.status --wait-ready --timeout 180
+        sudo microk8s.start && sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
 
         # enabling plugins one at a time to prevent a race condition
         # see https://github.com/ubuntu/microk8s/issues/706
-        sudo microk8s.enable dns && sleep 10 && sudo microk8s.status --wait-ready --timeout 180
-        sudo microk8s.enable storage && sleep 10 && sudo microk8s.status --wait-ready --timeout 180
-        sudo microk8s.enable ingress && sleep 10 &&  sudo microk8s.status --wait-ready --timeout 180
+        sudo microk8s.enable dns
+        echo "Sleeping for 10s while microk8s starts..."
+        sleep 10
+        sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
+
+        sudo microk8s.enable storage
+        echo "Sleeping for 10s while microk8s starts..."
+        sleep 10
+        sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
+
+        sudo microk8s.enable ingress
+        echo "Sleeping for 10s while microk8s starts..."
+        sleep 10
+        sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
 
         # restart to make sure the apparmor profile is correctly created
         # see https://github.com/ubuntu/microk8s/issues/493#issuecomment-498167435
-        sudo microk8s.stop && sudo microk8s.start && sudo microk8s.status --wait-ready --timeout 180 && sleep 20
+        sudo microk8s.stop && sudo microk8s.start
+        echo "Sleeping for 10s while microk8s starts..."
+        sleep 10
+        sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
+        echo "Sleeping for 20s while the kubernetes api starts..."
+        sleep 20
 
         # Wait for kube-dns and hostpath-provisioner, or pods will quickly enter a crashloop
-        sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=kube-dns --timeout=300s
-        sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=hostpath-provisioner --timeout=300s
+        sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=kube-dns --timeout=<< parameters.kubectl_timeout >>s
+        sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=hostpath-provisioner --timeout=<< parameters.kubectl_timeout >>s
 
         # install helm
         HELM_PKG=helm-<< parameters.helm_version >>-linux-amd64.tar.gz
@@ -99,7 +104,7 @@ steps:
         sudo microk8s.kubectl create serviceaccount --namespace kube-system tiller
         sudo microk8s.kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
         sudo helm init --service-account tiller
-        sudo microk8s.kubectl -n kube-system wait --for=condition=Ready pod -l name=tiller --timeout=300s
+        sudo microk8s.kubectl -n kube-system wait --for=condition=Ready pod -l name=tiller --timeout=<< parameters.kubectl_timeout >>s
 
   - run:
       name: Create values file
@@ -114,5 +119,5 @@ steps:
         sudo helm repo add default << parameters.helm_repo >>
 
         # if chart_version is an empty string then the latest version of the chart is installed
-        sudo helm install --name << parameters.chart_name >> default/<< parameters.chart_name >> --timeout 600 \
+        sudo helm install --name << parameters.chart_name >> default/<< parameters.chart_name >> --timeout << parameters.helm_timeout >> \
           --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>"
