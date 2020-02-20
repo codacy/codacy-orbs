@@ -6,6 +6,10 @@ parameters:
   cmd:
     description: "SBT command to run"
     type: string
+  cache_prefix:
+    description: "The prefix of cache to be used"
+    type: string
+    default: sbt-new-cache
   aws_profile:
     description: "The AWS profile to be used"
     type: string
@@ -60,6 +64,7 @@ steps:
       command: sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
   - sbt_cached:
       cmd: << parameters.cmd >>
+      cache_prefix: << parameters.cache_prefix >>
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:
