@@ -51,6 +51,27 @@ steps:
   - run:
       name: Setup microk8s and helm
       command: |
+        function microk8s_wait_ready() {
+          # Microk8s status is flaky, and often lies to you.
+          # We really have to make sure it is up before running more commands in CI.
+          local RETRIES=$1
+          while [[ $RETRIES -gt 0 ]] ; do
+            echo  "Waiting for microk8s to become ready... [$RETRIES]"
+            set +e
+            sudo microk8s.status --wait-ready --timeout 10
+            local MICROK8S_STATUS=$?
+
+            sudo microk8s.kubectl get pods --all-namespaces
+            local K8S_STATUS=$?
+            set -e
+
+            if [[ $MICROK8S_STATUS -eq 0 ]] && [[ $K8S_STATUS -eq 0 ]] ; then return 0 ; fi
+
+            RETRIES=$((RETRIES-1))
+          done
+          return 1
+        }
+
         # install storage addon dependencies
         sudo apt update && sudo apt install nfs-common -y
 
@@ -61,33 +82,17 @@ steps:
         # install microk8s and selected addons
         sudo snap install microk8s --classic --channel << parameters.microk8s_channel >>
         export PATH=$PATH:/snap/bin
-        sudo microk8s.start && sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
+        sudo microk8s.start && microk8s_wait_ready 20
 
         # enabling plugins one at a time to prevent a race condition
         # see https://github.com/ubuntu/microk8s/issues/706
-        sudo microk8s.enable dns
-        echo "Sleeping for 10s while microk8s starts..."
-        sleep 10
-        sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
-
-        sudo microk8s.enable storage
-        echo "Sleeping for 10s while microk8s starts..."
-        sleep 10
-        sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
-
-        sudo microk8s.enable ingress
-        echo "Sleeping for 10s while microk8s starts..."
-        sleep 10
-        sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
+        sudo microk8s.enable dns && microk8s_wait_ready 20
+        sudo microk8s.enable storage && microk8s_wait_ready 20
+        sudo microk8s.enable ingress && microk8s_wait_ready 20
 
         # restart to make sure the apparmor profile is correctly created
         # see https://github.com/ubuntu/microk8s/issues/493#issuecomment-498167435
-        sudo microk8s.stop && sudo microk8s.start
-        echo "Sleeping for 10s while microk8s starts..."
-        sleep 10
-        sudo microk8s.status --wait-ready --timeout << parameters.microk8s_timeout >>
-        echo "Sleeping for 20s while the kubernetes api starts..."
-        sleep 20
+        sudo microk8s.stop && sudo microk8s.start && microk8s_wait_ready 30
 
         # Wait for kube-dns and hostpath-provisioner, or pods will quickly enter a crashloop
         sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=kube-dns --timeout=<< parameters.kubectl_timeout >>s
