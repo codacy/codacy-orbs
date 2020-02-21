@@ -15,7 +15,7 @@ parameters:
   helm_version:
     description: "Helm version used to install the chart"
     type: string
-    default: "v2.15.1"
+    default: "v2.16.3"
   microk8s_channel:
     description: "Microk8s version used"
     type: string
