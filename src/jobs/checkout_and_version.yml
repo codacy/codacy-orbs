@@ -17,6 +17,10 @@ parameters:
     type: string
     default: "master"
     description: Overrides the default release branch (master).
+  version_prefix:
+    type: string
+    default: ""
+    description: Version prefix ("v" to tag versions like `v1.0.0`).
 
 executor: versioning
 
@@ -25,7 +29,7 @@ steps:
 
   - run:
       name: Set version
-      command: /bin/git-version --dev-branch=<<parameters.dev_branch>> --release-branch=<<parameters.release_branch>> > .version
+      command: /bin/git-version --dev-branch=<<parameters.dev_branch>> --release-branch=<<parameters.release_branch>> --version-prefix=<<parameters.version_prefix>> > .version
 
   - run:
       name: Current version
