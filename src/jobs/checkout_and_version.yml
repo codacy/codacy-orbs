@@ -29,7 +29,7 @@ steps:
 
   - run:
       name: Set version
-      command: /bin/git-version --dev-branch="<<parameters.dev_branch>>" --release-branch="<<parameters.release_branch>>" --version-prefix="<<parameters.version_prefix>>" > .version
+      command: /bin/git-version --dev-branch "<<parameters.dev_branch>>" --release-branch "<<parameters.release_branch>>" --version-prefix "<<parameters.version_prefix>>" > .version
 
   - run:
       name: Current version
