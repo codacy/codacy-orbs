@@ -27,9 +27,19 @@ executor: versioning
 steps:
   - checkout
 
-  - run:
-      name: Set version
-      command: /bin/git-version --dev-branch=<<parameters.dev_branch>> --release-branch=<<parameters.release_branch>> --version-prefix=<<parameters.version_prefix>> > .version
+  - when:
+      condition: <<parameters.version_prefix>>
+      steps:
+        - run:
+            name: Set version
+            command: /bin/git-version --dev-branch=<<parameters.dev_branch>> --release-branch=<<parameters.release_branch>> --version-prefix=<<parameters.version_prefix>> > .version
+
+  - unless:
+      condition: <<parameters.version_prefix>>
+      steps:
+        - run:
+            name: Set version
+            command: /bin/git-version --dev-branch=<<parameters.dev_branch>> --release-branch=<<parameters.release_branch>> > .version
 
   - run:
       name: Current version
