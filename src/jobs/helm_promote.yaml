@@ -1,8 +1,13 @@
-description: "Set version and publish to chart museum"
+description: "Downloads an helm chart from a source repository and uploads to a target repository"
 
 parameters:
-  version:
-    description: "Name of the helm chart"
+  source_version:
+    description: "Version of the chart in the source repository"
+    type: string
+    default: "$(cat .version)"
+
+  target_version:
+    description: "Version of the chart in the target repository"
     type: string
     default: "$(cat .version)"
 
@@ -11,22 +16,22 @@ parameters:
     type: string
 
   source_charts_repo_url:
-    description: "Domain for the repo to download the chart"
+    description: "URL of the source repository"
     type: string
     default: "https://charts.codacy.com/incubator"
 
   target_charts_repo_url:
-    description: "Domain for the repo to upload the chart"
+    description: "URL of the target repository"
     type: string
     default: "https://charts.codacy.com/stable"
 
   target_charts_repo_user:
-    description: "Username for the repo to upload the chart"
+    description: "Username for the target repository"
     type: string
     default: ${CHARTS_REPO_USER}
 
   target_charts_repo_pass:
-    description: "Password for the repo to upload the chart"
+    description: "Password for the target repository"
     type: string
     default: ${CHARTS_REPO_PASS}
 
@@ -40,5 +45,5 @@ steps:
       name: Push to charts museum
       command: |
         export TMP_DIR_PATH=$(mktemp -d)
-        helm fetch -d ${TMP_DIR_PATH} --repo << parameters.source_charts_repo_url >> << parameters.chart_name >> --version << parameters.version >>
-        helm push ${TMP_DIR_PATH}/*.tgz << parameters.target_charts_repo_url >> -u "<< parameters.target_charts_repo_user >>" -p "<< parameters.target_charts_repo_pass >>"
+        helm fetch -d ${TMP_DIR_PATH} --repo << parameters.source_charts_repo_url >> << parameters.chart_name >> --version << parameters.source_version >>
+        helm push ${TMP_DIR_PATH}/*.tgz << parameters.target_charts_repo_url >> -u "<< parameters.target_charts_repo_user >>" -p "<< parameters.target_charts_repo_pass >>" -v  "<< parameters.target_version >>"
