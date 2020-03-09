@@ -1,8 +1,13 @@
 description: "Set version and publish to chart museum"
 
 parameters:
-  version:
-    description: "Name of the helm chart"
+  source_version:
+    description: "Name of the source helm chart"
+    type: string
+    default: "$(cat .version)"
+
+  target_version:
+    description: "Name of the target helm chart"
     type: string
     default: "$(cat .version)"
 
@@ -40,5 +45,5 @@ steps:
       name: Push to charts museum
       command: |
         export TMP_DIR_PATH=$(mktemp -d)
-        helm fetch -d ${TMP_DIR_PATH} --repo << parameters.source_charts_repo_url >> << parameters.chart_name >> --version << parameters.version >>
-        helm push ${TMP_DIR_PATH}/*.tgz << parameters.target_charts_repo_url >> -u "<< parameters.target_charts_repo_user >>" -p "<< parameters.target_charts_repo_pass >>"
+        helm fetch -d ${TMP_DIR_PATH} --repo << parameters.source_charts_repo_url >> << parameters.chart_name >> --version << parameters.source_version >>
+        helm push ${TMP_DIR_PATH}/*.tgz << parameters.target_charts_repo_url >> -u "<< parameters.target_charts_repo_user >>" -p "<< parameters.target_charts_repo_pass >>" -v  "<< parameters.target_version >>"
