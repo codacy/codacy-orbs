@@ -1,6 +1,6 @@
 # Codacy Orbs
 
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/409584230c264967a68c07aa94ac5fa4)](https://www.codacy.com/manual/Codacy/codacy-orbs?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=codacy/codacy-orbs&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/409584230c264967a68c07aa94ac5fa4)](https://www.codacy.com/gh/codacy/codacy-orbs?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=codacy/codacy-orbs&amp;utm_campaign=Badge_Grade)
 
 This repository contains orbs used in the internal Codacy CI pipeline.
 
