@@ -5,6 +5,10 @@ parameters:
     description: "The command to run"
     type: string
     default: "$(cat .version)"
+  force:
+    description: "Use force to override versions"
+    type: boolean
+    default: false
 
 executor: machine
 
@@ -16,4 +20,16 @@ steps:
         - "df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5"
   - run:
       name: Tag
-      command: git tag << parameters.version >> && git push --tags
+      command: git fetch --tags
+  - when:
+      condition: << parameters.force >>
+      steps:
+        - deploy:
+            name: Tag
+            command: git tag --force << parameters.version >> && git push --force-with-lease --tags
+  - unless:
+      condition: << parameters.force >>
+      steps:
+        - deploy:
+            name: Tag
+            command: git tag << parameters.version >> && git push --tags
