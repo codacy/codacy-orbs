@@ -32,7 +32,12 @@ steps:
       steps:
         - run:
             name: Unpacking Caches
-            command: if [[ -f "$HOME/targets.tar.gz" ]]; then echo "unpacking cache" && tar -xf ~/targets.tar.gz; else echo "no cache found"; fi
+            command: |
+              if [[ -f "$HOME/targets.tar.gz" ]]; then
+                echo "unpacking cache" && tar -xf ~/targets.tar.gz
+              else
+                echo "no cache found"
+              fi
         - run:
             name: << parameters.cmd_name >>
             command: << parameters.cmd >>
@@ -42,7 +47,12 @@ steps:
       steps:
         - run:
             name: Unpacking Caches
-            command: if [[ -f "$HOME/targets.tar.gz" ]]; then echo "unpacking cache" && tar -xf ~/targets.tar.gz; else echo "no cache found"; fi
+            command: |
+              if [[ -f "$HOME/targets.tar.gz" ]]; then
+                echo "unpacking cache" && tar -xf ~/targets.tar.gz
+              else
+                echo "no cache found"
+              fi
         - run:
             name: SBT command - << parameters.cmd >>
             command: << parameters.cmd >>
@@ -56,6 +66,8 @@ steps:
               set +eo pipefail
               find $HOME/.sbt -name "*.lock" | xargs rm | true
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
+              # Workaround for this Sbt issue in CircleCI
+              # https://github.com/sbt/sbt/issues/4168
               find -name target -exec tar -zcf ~/targets.tar.gz -H posix {} + | true
               find -name target -exec rm -r {} + | true
 
