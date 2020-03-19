@@ -32,7 +32,7 @@ steps:
       steps:
         - run:
             name: Unpacking Caches
-            command: if [[ -f "~/targets.tar.gz" ]]; then tar -xf ~/targets.tar.gz; else echo "no cache found"; fi
+            command: if [[ -f "$HOME/targets.tar.gz" ]]; then echo "unpacking cache" && tar -xf ~/targets.tar.gz; else echo "no cache found"; fi
         - run:
             name: << parameters.cmd_name >>
             command: << parameters.cmd >>
@@ -42,7 +42,7 @@ steps:
       steps:
         - run:
             name: Unpacking Caches
-            command: if [[ -f "~/targets.tar.gz" ]]; then tar -xf ~/targets.tar.gz; else echo "no cache found"; fi
+            command: if [[ -f "$HOME/targets.tar.gz" ]]; then echo "unpacking cache" && tar -xf ~/targets.tar.gz; else echo "no cache found"; fi
         - run:
             name: SBT command - << parameters.cmd >>
             command: << parameters.cmd >>
