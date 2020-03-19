@@ -16,7 +16,7 @@ parameters:
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
-    default: sbt-cache-022020
+    default: sbt-cache-032020
 
 steps:
 
@@ -31,12 +31,18 @@ steps:
       condition: <<parameters.cmd_name>>
       steps:
         - run:
+            name: Unpacking Caches
+            command: if [[ -f "$HOME/targets.tar.gz" ]]; then echo "unpacking cache" && tar -xf ~/targets.tar.gz; else echo "no cache found"; fi
+        - run:
             name: << parameters.cmd_name >>
             command: << parameters.cmd >>
 
   - unless:
       condition: <<parameters.cmd_name>>
       steps:
+        - run:
+            name: Unpacking Caches
+            command: if [[ -f "$HOME/targets.tar.gz" ]]; then echo "unpacking cache" && tar -xf ~/targets.tar.gz; else echo "no cache found"; fi
         - run:
             name: SBT command - << parameters.cmd >>
             command: << parameters.cmd >>
@@ -50,6 +56,8 @@ steps:
               set +eo pipefail
               find $HOME/.sbt -name "*.lock" | xargs rm | true
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
+              find -name target -exec tar -zcf ~/targets.tar.gz -H posix {} + | true
+              find -name target -exec rm -r {} + | true
 
         - save_cache:
             key: << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -58,13 +66,4 @@ steps:
               - "~/.sbt"
               - "~/.m2"
               - "~/.cache"
-              - 'target'
-              - '*/target'
-              - '*/*/target'
-              - '*/*/*/target'
-              - '*/*/*/*/target'
-              - '*/*/*/*/*/*/target'
-              - '*/*/*/*/*/*/*/target'
-              - '*/*/*/*/*/*/*/*/target'
-              - '*/*/*/*/*/*/*/*/*/target'
-              - '*/*/*/*/*/*/*/*/*/*/target'
+              - "~/targets.tar.gz"
