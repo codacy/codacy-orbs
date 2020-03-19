@@ -31,7 +31,7 @@ steps:
       condition: <<parameters.cmd_name>>
       steps:
         - run:
-            name: Restoring caches
+            name: Unpacking Caches
             command: if [[ -f "targets.tar.gz" ]]; then tar -xf targets.tar.gz; fi
         - run:
             name: << parameters.cmd_name >>
@@ -41,7 +41,7 @@ steps:
       condition: <<parameters.cmd_name>>
       steps:
         - run:
-            name: Restoring caches
+            name: Unpacking Caches
             command: if [[ -f "targets.tar.gz" ]]; then tar -xf targets.tar.gz; fi
         - run:
             name: SBT command - << parameters.cmd >>
