@@ -32,7 +32,7 @@ steps:
       steps:
         - run:
             name: Restoring caches
-            command: tar -xf targets.tar.gz
+            command: tar -xf targets.tar.gz | true
         - run:
             name: << parameters.cmd_name >>
             command: << parameters.cmd >>
@@ -42,7 +42,7 @@ steps:
       steps:
         - run:
             name: Restoring caches
-            command: tar -xf targets.tar.gz
+            command: tar -xf targets.tar.gz | true
         - run:
             name: SBT command - << parameters.cmd >>
             command: << parameters.cmd >>
