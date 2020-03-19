@@ -42,7 +42,7 @@ steps:
       steps:
         - run:
             name: Restoring caches
-            command: tar -xf targets.tar.gz | true
+            command: if [[ -f "targets.tar.gz" ]]; then tar -xf targets.tar.gz; fi
         - run:
             name: SBT command - << parameters.cmd >>
             command: << parameters.cmd >>
