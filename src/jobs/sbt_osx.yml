@@ -1,0 +1,74 @@
+description: "A default sbt job"
+
+executor: osx
+
+parameters:
+  cmd:
+    description: "SBT command to run"
+    type: string
+  cache_prefix:
+    description: "The prefix of cache to be used"
+    type: string
+    default: sbt-cache-032020
+  aws_profile:
+    description: "The AWS profile to be used"
+    type: string
+    default: "default"
+  region:
+    description: "The AWS region for the deployment"
+    type: string
+    default: eu-west-1
+  credentials_file_content:
+    description: "AWS credentials file contents to grant access for the step"
+    type: string
+    default: |
+      [default]
+      aws_access_key_id=$ACCESS_KEY_ID
+      aws_secret_access_key=$SECRET_ACCESS_KEY
+      [maven]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$MAVEN_PUBLISHER_ROLE
+  persist_to_workspace:
+    description: "Whether to persist the workspace or not at the end of the job"
+    type: boolean
+    default: false
+  install_sbt_version:
+    description: "Version of SBT to install. If empty, the system one will be used"
+    type: string
+    default: "" # on OSX sbt is not installed by default / check
+environment:
+  AWS_PROFILE: << parameters.aws_profile >>
+  AWS_DEFAULT_REGION: << parameters.region >>
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+  - when:
+      condition: << parameters.install_sbt_version >>
+      steps:
+        - run:
+            name: Download and install sbt << parameters.install_sbt_version >>
+            command: |
+              wget https://dl.bintray.com/sbt/debian/sbt-<< parameters.install_sbt_version >>.deb
+              sudo dpkg -i sbt-<< parameters.install_sbt_version >>.deb
+              rm -f sbt-<< parameters.install_sbt_version >>.deb
+  - run:
+      name: Setup AWS Credentials
+      command: |
+        mkdir -p ~/.aws && touch ~/.aws/credentials
+        cat >> ~/.aws/credentials \<< EOF
+        << parameters.credentials_file_content >>
+        EOF
+  - run:
+      name: Set OpenJdk
+      command: sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+  - sbt_cached:
+      cmd: << parameters.cmd >>
+      cache_prefix: << parameters.cache_prefix >>
+  - when:
+      condition: << parameters.persist_to_workspace >>
+      steps:
+        - persist_to_workspace:
+            root: ~/workdir
+            paths:
+              - '*'
