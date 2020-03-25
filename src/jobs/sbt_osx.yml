@@ -32,10 +32,6 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
-  install_sbt_version:
-    description: "Version of SBT to install. If empty, the system one will be used"
-    type: string
-    default: "" # on OSX sbt is not installed by default / check
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
   AWS_DEFAULT_REGION: << parameters.region >>
@@ -43,15 +39,9 @@ environment:
 steps:
   - attach_workspace:
       at: ~/workdir
-  - when:
-      condition: << parameters.install_sbt_version >>
-      steps:
-        - run:
-            name: Download and install sbt << parameters.install_sbt_version >>
-            command: |
-              wget https://dl.bintray.com/sbt/debian/sbt-<< parameters.install_sbt_version >>.deb
-              sudo dpkg -i sbt-<< parameters.install_sbt_version >>.deb
-              rm -f sbt-<< parameters.install_sbt_version >>.deb
+  - run:
+      name: Download and install sbt
+      command: brew install sbt
   - run:
       name: Setup AWS Credentials
       command: |
