@@ -17,6 +17,10 @@ parameters:
     description: "The prefix of cache to be used"
     type: string
     default: sbt-cache-032020
+  store_test_results:
+    description: "Whether to upload the test results back to CircleCI"
+    type: boolean
+    default: false
 
 steps:
 
@@ -56,6 +60,12 @@ steps:
         - run:
             name: SBT command - << parameters.cmd >>
             command: << parameters.cmd >>
+
+  - when:
+      condition: << parameters.store_test_results >>
+      steps:
+        - store_test_results:
+            path: ~/workdir
 
   - when:
       condition: <<parameters.save_cache>>
