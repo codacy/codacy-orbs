@@ -32,6 +32,10 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
+  store_test_results:
+    description: "Whether to upload the test results back to CircleCI"
+    type: boolean
+    default: false
   install_sbt_version:
     description: "Version of SBT to install. If empty, the system one will be used"
     type: string
@@ -65,6 +69,11 @@ steps:
   - sbt_cached:
       cmd: << parameters.cmd >>
       cache_prefix: << parameters.cache_prefix >>
+  - when:
+      condition: << parameters.store_test_results >>
+      steps:
+        - store_test_results:
+            path: ~/workdir
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:
