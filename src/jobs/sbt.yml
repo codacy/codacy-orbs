@@ -32,6 +32,10 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
+  store_test_results:
+    description: "Whether to upload the test results back to CircleCI"
+    type: boolean
+    default: false
   install_sbt_version:
     description: "Version of SBT to install. If empty, the system one will be used"
     type: string
@@ -62,9 +66,22 @@ steps:
   - run:
       name: Set OpenJdk
       command: sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
-  - sbt_cached:
-      cmd: << parameters.cmd >>
-      cache_prefix: << parameters.cache_prefix >>
+
+  - when:
+      condition: << parameters.store_test_results >>
+      steps:
+        - sbt_cached:
+            cmd: << parameters.cmd >>
+            cache_prefix: << parameters.cache_prefix >>
+            store_test_results_path: ~/workdir
+
+  - unless:
+      condition: << parameters.store_test_results >>
+      steps:
+        - sbt_cached:
+            cmd: << parameters.cmd >>
+            cache_prefix: << parameters.cache_prefix >>
+
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:
