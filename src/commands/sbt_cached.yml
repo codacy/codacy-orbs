@@ -79,7 +79,6 @@ steps:
               # Workaround for this Sbt issue in CircleCI
               # https://github.com/sbt/sbt/issues/4168
               find -name target -type d -exec tar -zcf ~/targets.tar.gz -H posix {} + | true
-              find -name target -type d -exec rm -r {} + | true
 
         - save_cache:
             key: << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
