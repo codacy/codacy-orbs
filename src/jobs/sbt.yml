@@ -65,6 +65,7 @@ steps:
   - run:
       name: Uncompress local targets
       command: |
+        ls -al
         if [[ -f "targets.tar.gz" ]]; then
           echo "unpacking persisted workspace" && tar -xf targets.tar.gz
         else
@@ -81,7 +82,9 @@ steps:
             command: |
               find -name target -type d -exec tar -zcf targets.tar.gz -H posix {} + | true
               find -name target -type d -exec rm -r {} + | true
+              ls -al
         - persist_to_workspace:
             root: ~/workdir
             paths:
               - '*'
+              - targets.tar.gz
