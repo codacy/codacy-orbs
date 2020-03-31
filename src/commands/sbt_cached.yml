@@ -34,7 +34,12 @@ steps:
             name: Unpacking Caches
             command: |
               if [[ -f "$HOME/targets.tar.gz" ]]; then
-                echo "unpacking cache" && tar -xf ~/targets.tar.gz
+                echo "cache found"
+                if [[ -d "target" ]]; then
+                  echo "local workspace exists, skipping"
+                else
+                  echo "unpacking cache" && tar -xf ~/targets.tar.gz
+                fi
               else
                 echo "no cache found"
               fi
@@ -49,7 +54,12 @@ steps:
             name: Unpacking Caches
             command: |
               if [[ -f "$HOME/targets.tar.gz" ]]; then
-                echo "unpacking cache" && tar -xf ~/targets.tar.gz
+                echo "cache found"
+                if [[ -d "target" ]]; then
+                  echo "local workspace exists, skipping"
+                else
+                  echo "unpacking cache" && tar -xf ~/targets.tar.gz
+                fi
               else
                 echo "no cache found"
               fi
