@@ -85,7 +85,13 @@ steps:
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:
+        - run:
+            name: Compressing targets
+            command: |
+              find -name target -type d -exec tar -zcf targets.tar.gz -H posix {} + | true
+              find -name target -type d -exec rm -r {} + | true
         - persist_to_workspace:
             root: ~/workdir
             paths:
               - '*'
+              - targets.tar.gz
