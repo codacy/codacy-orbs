@@ -1,0 +1,53 @@
+description: "A job to deploy latest dev components to self-hosted"
+
+executor: do
+
+parameters:
+  do_token:
+    description: "The digital ocean token to use"
+    type: string
+  component_name:
+    description: "The name of the component's deployment to be rotated after the install"
+    type: string
+  helm_install_extra_flags:
+    description: "Helm extra flags to be passed on to the install command"
+    type: string
+    default: ""
+
+environment:
+  DO_TOKEN: << parameters.do_token >>
+  DEPLOYMENTS: << parameters.component_name >>
+  HELM_INSTALL_EXTRA_FLAGS: << parameters.helm_install_extra_flags >>
+
+steps:
+    - add_ssh_keys:
+        fingerprints:
+          - "df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5"
+    - run:
+        name: Checkout codacy chart
+        command: |
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+          git clone git@github.com:codacy/chart.git --depth 1
+    - run:
+        name: Swap requirements files
+        command: |
+            rm chart/codacy/requirements.yaml
+            mv chart/codacy/requirements-dev.yaml chart/codacy/requirements.yaml
+    - run:
+        name: helm dep up
+        command: make -C chart/ update_dependencies update_worker_version
+    - run:
+        name: Setup DO credentials
+        command: doctl auth init -t $DO_TOKEN &>/dev/null
+    - run:
+        name: Set DO cluster in kubeconfig
+        command: doctl kubernetes cluster kubeconfig save "codacy-doks-cluster-dev" --set-current-context
+    - deploy:
+        name: Poll for installation availability
+        command: |
+          helm poll -r codacy
+    - deploy:
+        name: Install bespoke codacy chart
+        command: |
+            echo "Installing codacy"
+            make -C chart/.doks/ helm_install_from_local_dir RELEASE_NAME=codacy NAMESPACE=codacy CODACY_URL=http://dev.k8s.dev.codacy.org DEPLOYMENTS=$DEPLOYMENTS HELM_INSTALL_EXTRA_FLAGS=$HELM_INSTALL_EXTRA_FLAGS
