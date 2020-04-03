@@ -1,0 +1,7 @@
+description: >
+  A docker image to run Digital Ocean commands
+
+docker:
+  - image: codacy/ci-do:0.6.0
+
+working_directory: ~/workdir

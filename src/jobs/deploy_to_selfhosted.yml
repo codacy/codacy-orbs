@@ -1,0 +1,40 @@
+description: "A job to deploy latest dev components to self-hosted"
+
+executor: do
+
+steps:
+  - deploy:
+      name: Trigger workflow to deploy dev components
+      command: |
+        response=$(curl -XPOST -s -H 'Accept: application/json' -H 'x-attribution-login: string' -H 'x-attribution-actor-id: string' -H 'Content-type: application/json' -d '{"branch": "master"}' 'https://circleci.com/api/v2/project/gh/codacy/chart/pipeline' -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
+        export workflowState=$(echo $response | jq '.state' | sed 's/\"//g')
+        export workflowID=$(echo $response | jq '.id' | sed 's/\"//g')
+
+        if [ "$workflowState" != "pending" ] && [ "$workflowState" != "running" ] ; then
+            echo "Remote workflow execution failed abruptly!"
+            echo $response
+            exit 1
+        fi
+        echo "Triggered workflow id: $workflowID"
+
+  - deploy:
+      name: Poll for remote workflow status
+      command: |
+        echo "Polling for workflow id: $workflowID"
+        getWorkflowCommand="curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/pipeline/$workflowID/workflow" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN"
+        status=$(eval $getWorkflowCommand | jq '.items[0].status' | sed "s/\"//g")
+        while [[ "$status" == "pending" || "$status" == "running" ]]
+        do
+            echo $status
+            sleep 10
+            status=$(eval $getWorkflowCommand | jq '.items[0].status' | sed "s/\"//g")
+        done
+
+        if [ "$status" == "success" ] ; then
+            echo "Remote workflow $workflowID execution successful."
+            exit 0
+        else
+            echo "Remote workflow $workflowID execution failed."
+            echo $(eval $getWorkflowCommand | jq)
+            exit 1
+        fi
