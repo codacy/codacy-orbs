@@ -6,6 +6,11 @@ steps:
   - deploy:
       name: Trigger workflow to deploy dev components
       command: |
+        function get_workflow_status {
+            response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/pipeline/$workflowID/workflow" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN" | jq '.items[0].status' | sed "s/\"//g")
+            echo $response
+        }
+
         response=$(curl -XPOST -s -H 'Accept: application/json' -H 'x-attribution-login: string' -H 'x-attribution-actor-id: string' -H 'Content-type: application/json' -d '{"branch": "master"}' 'https://circleci.com/api/v2/project/gh/codacy/chart/pipeline' -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
         workflowState=$(echo $response | jq '.state' | sed 's/\"//g')
         workflowID=$(echo $response | jq '.id' | sed 's/\"//g')
@@ -17,22 +22,18 @@ steps:
         fi
 
         echo "Polling for workflow id: $workflowID"
-        getWorkflowCommand="curl -s -H 'Accept: application/json' -H 'Content-type: application/json' \"https://circleci.com/api/v2/pipeline/$workflowID/workflow\" -H \"Circle-Token: $CIRCLE_CI_GITHUB_TOKEN\""
-        status=$(eval $getWorkflowCommand | jq '.items[0].status' | sed "s/\"//g")
-        echo $status
+        status=$(get_workflow_status)
         while [[ "$status" == "pending" || "$status" == "running" || "$status" == "null" ]]
         do
             echo "Workflow status: $status"
             sleep 10s
-            status=$(eval $getWorkflowCommand | jq '.items[0].status' | sed "s/\"//g")
+            status=$(get_workflow_status)
         done
 
         if [ "$status" == "success" ] ; then
             echo "Remote workflow $workflowID execution successful."
-            echo $(eval $getWorkflowCommand | jq)
             exit 0
         else
             echo "Remote workflow $workflowID execution failed."
-            echo $(eval $getWorkflowCommand | jq)
             exit 1
         fi
