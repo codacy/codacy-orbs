@@ -22,7 +22,7 @@ steps:
         echo $status
         while [[ "$status" == "pending" || "$status" == "running" || "$status" == "null" ]]
         do
-            echo $status
+            echo "Workflow status: $status"
             sleep 10s
             status=$(eval $getWorkflowCommand | jq '.items[0].status' | sed "s/\"//g")
         done
