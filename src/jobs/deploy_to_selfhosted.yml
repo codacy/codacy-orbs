@@ -6,14 +6,19 @@ steps:
   - deploy:
       name: Trigger workflow to deploy dev components
       command: |
-        function get_workflow_status {
-            response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/pipeline/$workflowID/workflow" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN" | jq '.items[0].status' | sed "s/\"//g")
+        function trigger_remote_workflow {
+            response=$(curl -XPOST -s -H 'Accept: application/json' -H 'x-attribution-login: string' -H 'x-attribution-actor-id: string' -H 'Content-type: application/json' -d '{"branch": "master"}' 'https://circleci.com/api/v2/project/gh/codacy/chart/pipeline' -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
             echo $response
         }
 
-        response=$(curl -XPOST -s -H 'Accept: application/json' -H 'x-attribution-login: string' -H 'x-attribution-actor-id: string' -H 'Content-type: application/json' -d '{"branch": "master"}' 'https://circleci.com/api/v2/project/gh/codacy/chart/pipeline' -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
-        workflowState=$(echo $response | jq '.state' | sed 's/\"//g')
-        workflowID=$(echo $response | jq '.id' | sed 's/\"//g')
+        function get_workflow_status {
+            response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/pipeline/$workflowID/workflow" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN" | jq -r '.items[0].status')
+            echo $response
+        }
+
+        response=$(trigger_remote_workflow)
+        workflowState=$(echo $response | jq -r '.state')
+        workflowID=$(echo $response | jq -r '.id')
 
         if [ "$workflowState" != "pending" ] && [ "$workflowState" != "running" ] ; then
             echo "Remote workflow execution failed abruptly!"
