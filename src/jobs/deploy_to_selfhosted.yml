@@ -11,9 +11,22 @@ steps:
             echo $response
         }
 
-        function get_workflow_status {
-            response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/pipeline/$workflowID/workflow" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN" | jq -r '.items[0].status')
+        function get_workflow {
+            response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/pipeline/$1/workflow" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
             echo $response
+        }
+
+        function get_workflow_status {
+            response=$(get_workflow $1 | jq -r '.items[0].status')
+            echo $response
+        }
+
+        function get_remote_workflow_url {
+            # for some reason, circleci returns a different workflow ID between the trigger workflow and the get workflow api methods.
+            # the id we want to build the workflow url is the one returned by the get workflow api endpoint.
+            id=$(echo $1 | jq -r '.items[0].id')
+            number=$(echo $1 | jq -r '.items[0].pipeline_number')
+            echo "https://app.circleci.com/pipelines/github/codacy/chart/$number/workflows/$id"
         }
 
         response=$(trigger_remote_workflow)
@@ -26,19 +39,23 @@ steps:
             exit 1
         fi
 
-        echo "Polling for workflow id: $workflowID"
-        status=$(get_workflow_status)
+        remoteWorkflow=$(get_workflow $workflowID)
+        status=$(get_workflow_status $workflowID)
+        workflowURL=$(get_remote_workflow_url $remoteWorkflow)
+
+        echo "Polling for workflow id: $workflowID - $workflowURL"
         while [[ "$status" == "pending" || "$status" == "running" || "$status" == "null" ]]
         do
             echo "Workflow status: $status"
             sleep 10s
-            status=$(get_workflow_status)
+            status=$(get_workflow_status $workflowID)
         done
 
         if [ "$status" == "success" ] ; then
-            echo "Remote workflow $workflowID execution successful."
+            echo "Remote workflow $workflowID execution successful. - $workflowURL"
             exit 0
         else
-            echo "Remote workflow $workflowID execution failed."
+            echo "Remote workflow $workflowID execution failed. - $workflowURL"
             exit 1
         fi
+
