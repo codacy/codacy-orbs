@@ -4,6 +4,10 @@ executor: do
 
 steps:
   - deploy:
+      name: Poll for installation availability
+      command: |
+        helm poll -r codacy
+  - deploy:
       name: Trigger workflow to deploy dev components
       command: |
         function trigger_remote_workflow {
