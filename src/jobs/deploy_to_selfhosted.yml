@@ -58,4 +58,3 @@ steps:
             echo "Remote workflow $workflowID execution failed. - $workflowURL"
             exit 1
         fi
-
