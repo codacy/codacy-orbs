@@ -33,6 +33,14 @@ steps:
             echo "https://app.circleci.com/pipelines/github/codacy/chart/$number/workflows/$id"
         }
 
+        function wait_for_workflow_started {
+            timeout 10s bash -c "while [[ \"$(echo $remoteWorkflow | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep $4; echo \"$5\"; done" || false
+        }
+
+        function wait_for_workflow_terminated {
+            timeout 300s bash -c "while [[ \"$(echo $remoteWorkflow | jq -r '.items[0].status=="pending" or .items[0].status=="running"')\" == "true" ]]; do sleep 30s; echo \"Waiting for remote workflow to complete...\"; remoteWorkflow=$(get_workflow $workflowID); done" || false
+        }
+
         response=$(trigger_remote_workflow)
         workflowState=$(echo $response | jq -r '.state')
         workflowID=$(echo $response | jq -r '.id')
@@ -42,23 +50,17 @@ steps:
             echo $response
             exit 1
         fi
-        sleep 5s
+
         remoteWorkflow=$(get_workflow $workflowID)
-        status=$(get_workflow_status $workflowID)
+        wait_for_workflow_started
         workflowURL=$(get_remote_workflow_url $remoteWorkflow)
-
-        echo "Polling for workflow id: $workflowID - $workflowURL"
-        while [[ "$status" == "pending" || "$status" == "running" || "$status" == "null" ]]
-        do
-            echo "Workflow status: $status"
-            sleep 10s
-            status=$(get_workflow_status $workflowID)
-        done
-
+        echo "Running chart workflow id: $workflowID - $workflowURL"
+        wait_for_workflow_terminated
+        status=$(get_workflow_status $workflowID)
         if [ "$status" == "success" ] ; then
             echo "Remote workflow $workflowID execution successful. - $workflowURL"
             exit 0
         else
-            echo "Remote workflow $workflowID execution failed. - $workflowURL"
+            echo "Remote workflow $workflowID execution failed ($status). - $workflowURL"
             exit 1
         fi
