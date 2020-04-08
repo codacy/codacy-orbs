@@ -38,7 +38,7 @@ steps:
             echo $response
             exit 1
         fi
-
+        sleep 5s
         remoteWorkflow=$(get_workflow $workflowID)
         status=$(get_workflow_status $workflowID)
         workflowURL=$(get_remote_workflow_url $remoteWorkflow)
