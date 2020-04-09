@@ -39,7 +39,7 @@ steps:
         }
 
         function wait_for_workflow_started {
-            timeout -t 10 bash -c "while [[ \"$(echo $remoteWorkflow | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep 2s; echo \"$5\"; done" || false
+            timeout -t 10 bash -c "while [[ \"$(echo $remoteWorkflow | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep 2s; echo \"Waiting for remote workflow to start...\"; done" || false
         }
 
         function wait_for_workflow_terminated {
@@ -58,6 +58,7 @@ steps:
 
         remoteWorkflow=$(get_workflow $workflowID)
         wait_for_workflow_started
+        remoteWorkflow=$(get_workflow $workflowID)
         workflowURL=$(get_remote_workflow_url $remoteWorkflow)
         echo "Running chart workflow id: $workflowID - $workflowURL"
         wait_for_workflow_terminated
