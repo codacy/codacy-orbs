@@ -20,13 +20,18 @@ steps:
             echo $response
         }
 
-        function get_workflow {
+        function get_workflows {
             response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/pipeline/$1/workflow" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
             echo $response
         }
 
+        function get_workflow {
+            response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/workflow/$1" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
+            echo $response
+        }
+
         function get_workflow_status {
-            response=$(get_workflow $1 | jq -r '.items[0].status')
+            response=$(get_workflow $1 | jq -r '.status')
             echo $response
         }
 
@@ -39,16 +44,16 @@ steps:
         }
 
         function wait_for_workflow_started {
-            timeout -t 10 bash -c "while [[ \"$(get_workflow $workflowID | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep 2s; echo \"Waiting for remote workflow to start...\"; done" || false
+            timeout -t 10 bash -c "while [[ \"$(get_workflows $pipelineID | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep 2s; echo \"Waiting for remote workflow to start...\"; done" || false
         }
 
         function wait_for_workflow_terminated {
-            timeout -t 360 bash -c "while [[ \"$(get_workflow $workflowID | jq -r '.items[0].status=="pending" or .items[0].status=="running"')\" == "true" ]]; do sleep 10s; echo \"Waiting for remote workflow to complete...\"; done" || false
+            timeout -t 360 bash -c "while [[ \"$(get_workflow_status $workflowID)\" == "running" ]]; do sleep 10s; echo \"Waiting for remote workflow to complete...\"; done" || false
         }
 
         response=$(trigger_remote_workflow)
         workflowState=$(echo $response | jq -r '.state')
-        workflowID=$(echo $response | jq -r '.id')
+        pipelineID=$(echo $response | jq -r '.id')
 
         if [ "$workflowState" != "pending" ] && [ "$workflowState" != "running" ] ; then
             echo "Remote workflow execution failed abruptly!"
@@ -56,10 +61,10 @@ steps:
             exit 1
         fi
 
-        remoteWorkflow=$(get_workflow $workflowID)
         wait_for_workflow_started
-        remoteWorkflow=$(get_workflow $workflowID)
+        remoteWorkflow=$(get_workflows $pipelineID)
         workflowURL=$(get_remote_workflow_url $remoteWorkflow)
+        workflowID=$(echo $remoteWorkflow | jq -r '.items[0].id')
         echo "Running chart workflow id: $workflowID - $workflowURL"
         wait_for_workflow_terminated
         status=$(get_workflow_status $workflowID)
