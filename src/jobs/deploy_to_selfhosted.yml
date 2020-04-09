@@ -4,6 +4,11 @@ executor: do
 
 steps:
   - deploy:
+      name: Set cluster to digital ocean
+      command: |
+        doctl auth init -t $DO_TOKEN &>/dev/null
+        doctl kubernetes cluster kubeconfig save "codacy-doks-cluster-dev" --set-current-context
+  - deploy:
       name: Poll for installation availability
       command: |
         helm poll -r codacy
