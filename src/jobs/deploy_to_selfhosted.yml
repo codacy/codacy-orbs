@@ -39,7 +39,7 @@ steps:
         }
 
         function wait_for_workflow_started {
-            timeout -t 10 bash -c "while [[ \"$(echo $remoteWorkflow | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep $4; echo \"$5\"; done" || false
+            timeout -t 10 bash -c "while [[ \"$(echo $remoteWorkflow | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep 2s; echo \"$5\"; done" || false
         }
 
         function wait_for_workflow_terminated {
