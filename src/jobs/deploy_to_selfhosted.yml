@@ -39,11 +39,11 @@ steps:
         }
 
         function wait_for_workflow_started {
-            timeout 10s bash -c "while [[ \"$(echo $remoteWorkflow | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep $4; echo \"$5\"; done" || false
+            timeout -t 10 bash -c "while [[ \"$(echo $remoteWorkflow | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep $4; echo \"$5\"; done" || false
         }
 
         function wait_for_workflow_terminated {
-            timeout 300s bash -c "while [[ \"$(echo $remoteWorkflow | jq -r '.items[0].status=="pending" or .items[0].status=="running"')\" == "true" ]]; do sleep 30s; echo \"Waiting for remote workflow to complete...\"; remoteWorkflow=$(get_workflow $workflowID); done" || false
+            timeout -t 300 bash -c "while [[ \"$(echo $remoteWorkflow | jq -r '.items[0].status=="pending" or .items[0].status=="running"')\" == "true" ]]; do sleep 30s; echo \"Waiting for remote workflow to complete...\"; remoteWorkflow=$(get_workflow $workflowID); done" || false
         }
 
         response=$(trigger_remote_workflow)
