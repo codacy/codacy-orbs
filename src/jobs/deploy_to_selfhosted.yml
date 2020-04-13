@@ -20,7 +20,7 @@ steps:
             echo $response
         }
 
-        function get_workflows {
+        function get_workflow_from_pipeline {
             response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/pipeline/$1/workflow" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
             echo $response
         }
@@ -36,19 +36,27 @@ steps:
         }
 
         function get_remote_workflow_url {
-            # for some reason, circleci returns a different workflow ID between the trigger workflow and the get workflow api methods.
-            # the id we want to build the workflow url is the one returned by the get workflow api endpoint.
-            id=$(echo $1 | jq -r '.items[0].id')
-            number=$(echo $1 | jq -r '.items[0].pipeline_number')
+            workflow=$(get_workflow $1)
+            id=$(echo $workflow | jq -r '.id')
+            number=$(echo $workflow | jq -r '.pipeline_number')
             echo "https://app.circleci.com/pipelines/github/codacy/chart/$number/workflows/$id"
         }
 
         function wait_for_workflow_started {
-            timeout -t 10 bash -c "while [[ \"$(get_workflows $pipelineID | jq -r 'isempty(.items[])')\" == "true" ]]; do sleep 2s; echo \"Waiting for remote workflow to start...\"; done" || false
+            while [[ "$(get_workflow_from_pipeline $pipelineID | jq -r 'isempty(.items[])')" == "true" ]]; do sleep 2s; echo "Waiting for remote workflow to start..."; done
         }
 
         function wait_for_workflow_terminated {
-            timeout -t 360 bash -c "while [[ \"$(get_workflow_status $workflowID)\" == "running" ]]; do sleep 10s; echo \"Waiting for remote workflow to complete...\"; done" || false
+            status=$(get_workflow_status $workflowID)
+            while [[ "$status" == "running" ]]; do sleep 10s; echo "Waiting for remote workflow to complete... ($status)"; status=$(get_workflow_status $workflowID); done
+
+            if [ "$status" == "success" ] ; then
+                echo "Remote workflow $workflowID execution successful. - $workflowURL"
+                exit 0
+            else
+                echo "Remote workflow $workflowID execution failed ($status). - $workflowURL"
+                exit 1
+            fi
         }
 
         response=$(trigger_remote_workflow)
@@ -62,16 +70,10 @@ steps:
         fi
 
         wait_for_workflow_started
-        remoteWorkflow=$(get_workflows $pipelineID)
-        workflowURL=$(get_remote_workflow_url $remoteWorkflow)
+        remoteWorkflow=$(get_workflow_from_pipeline $pipelineID)
         workflowID=$(echo $remoteWorkflow | jq -r '.items[0].id')
+        workflowURL=$(get_remote_workflow_url $workflowID)
+
         echo "Running chart workflow id: $workflowID - $workflowURL"
         wait_for_workflow_terminated
-        status=$(get_workflow_status $workflowID)
-        if [ "$status" == "success" ] ; then
-            echo "Remote workflow $workflowID execution successful. - $workflowURL"
-            exit 0
-        else
-            echo "Remote workflow $workflowID execution failed ($status). - $workflowURL"
-            exit 1
-        fi
+
