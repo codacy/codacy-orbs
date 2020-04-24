@@ -6,20 +6,34 @@ parameters:
     type: string
     default: "$(cat .version)"
   force:
-    description: "Use force to override versions"
+    description: "Use the force to override versions"
     type: boolean
     default: false
+  username:
+    description: "Username of the account used to push to Bitbucket/Github"
+    type: string
+    default: "codacycircleci"
+  password:
+    description: "Access token/app password of the account used to push to Bitbucket/Github"
+    type: string
+    default: "$GPR_AUTH_TOKEN"
 
 executor: machine
 
 steps:
   - attach_workspace:
       at: ~/workdir
-  - add_ssh_keys:
-      fingerprints:
-        - "df:83:d7:c7:d5:79:06:c2:3b:d1:fd:e2:a3:d1:12:c5"
+  - when:
+      condition: << parameters.password >>
+      steps:
+        - run:
+            name: Set Git Config
+            command: |
+              # use https with access token instead of git+ssh
+              git config url."https://<< parameters.username >>:<< parameters.password >>@bitbucket.org/".insteadOf "git@bitbucket.org:"
+              git config url."https://<< parameters.username >>:<< parameters.password >>@github.com/".insteadOf "git@github.com:"
   - run:
-      name: Tag
+      name: Fetch Tags
       command: git fetch --tags
   - when:
       condition: << parameters.force >>
