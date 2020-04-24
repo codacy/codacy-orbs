@@ -16,7 +16,7 @@ parameters:
   password:
     description: "Access token/app password of the account used to push to Bitbucket/Github"
     type: string
-    default: "$GPR_AUTH_TOKEN"
+    default: "$PROVIDER_TOKEN"
 
 executor: machine
 
