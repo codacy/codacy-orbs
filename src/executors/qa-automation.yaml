@@ -1,3 +1,8 @@
+parameters:
+  qa_automation_runner_version:
+    description: "The qa-automation-tests version to use"
+    type: string
+
 docker:
-  - image: codacy/qa-automation-test-runner:2.8.2
+  - image: codacy/qa-automation-test-runner:<< parameters.qa_automation_runner_version >>
   - image: selenium/standalone-chrome:3.141.0
