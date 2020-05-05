@@ -1,11 +1,9 @@
-executor: qa-automation
-
 parameters:
   test_path:
     description: "The path to the test suite to run"
     type: string
   project_name:
-    description: "The name of the project running the tests"
+    description: "The name of the project in report portal"
     type: string
   launch_name:
     description: "The name to give to the test launch"
@@ -19,7 +17,14 @@ parameters:
     description: "The tags to add to the test launch (seperated by semi-colons)"
     type: string
     default: CIRCLECI;EXTERNAL
+  suite_version:
+    description: "The qa-automation-tests version to use"
+    type: string
+    default: "latest"
 
+executor:
+  name: qa-automation
+  qa_automation_runner_version: << parameters.suite_version >>
 
 environment:
   TEST_PATH: << parameters.test_path >>
