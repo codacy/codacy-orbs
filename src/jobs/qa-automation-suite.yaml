@@ -1,0 +1,43 @@
+executor: qa-automation
+
+parameters:
+  test_path:
+    description: "The path to the test suite to run"
+    type: string
+  project_name:
+    description: "The name of the project running the tests"
+    type: string
+  launch_name:
+    description: "The name to give to the test launch"
+    type: string
+    default: EXTERNAL_TEST_RUN
+  launch_description:
+    description: "The description to give to the test launch"
+    type: string
+    default: "Automated Tests Ran by CircleCI"
+  launch_tag:
+    description: "The tags to add to the test launch (seperated by semi-colons)"
+    type: string
+    default: CIRCLECI;EXTERNAL
+
+
+environment:
+  TEST_PATH: << parameters.test_path >>
+  PROJECT_NAME: << parameters.project_name >>
+  LAUNCH_NAME: << parameters.launch_name >>
+  LAUNCH_DESCRIPTION: << parameters.launch_description >>
+  LAUNCH_TAG: << parameters.launch_tag >>
+  RP_ENDPOINT: https://reportportal.dev.codacy.org
+  SELENIUM_DRIVER_URL: http://localhost:4444/wd/hub
+  HUB_URL: http://localhost:4444/wd/hub
+  JAVA_OPTS: -Xss256m -Xmx512m
+  MAVEN_OPTS: -showversion -Xms256m -Xmx512m
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+  - deploy:
+      name: Run tests
+      command: |
+        export EXECUTION_TIME=`date +%F_%Hh%M-%Z`
+        sh /opt/tests/qa-automation-test-runner/build/run_tests.sh
