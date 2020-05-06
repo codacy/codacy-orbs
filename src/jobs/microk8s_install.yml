@@ -15,7 +15,7 @@ parameters:
   helm_version:
     description: "Helm version used to install the chart"
     type: string
-    default: "v2.16.3"
+    default: "v3.2.0"
   microk8s_channel:
     description: "Microk8s version used"
     type: string
@@ -110,16 +110,27 @@ steps:
         HELM_PKG=helm-<< parameters.helm_version >>-linux-amd64.tar.gz
         wget https://get.helm.sh/$HELM_PKG
         tar xvzf $HELM_PKG
-        sudo mv linux-amd64/tiller linux-amd64/helm /usr/local/bin
+        sudo mv linux-amd64/helm /usr/local/bin
+        if [ $(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
+          echo "Helm2 installed. Moving Tiller."
+          sudo mv linux-amd64/tiller /usr/local/bin
+        else
+          echo "No Tiller to move."
+        fi
         rm -rvf $HELM_PKG linux-amd64/
 
   - run:
-      name: Install tiller and wait for it to be ready
+      name: Install Helm dependencies
       command: |
+      if [ $(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
+        echo "Helm2 installed. Installing Tiller..."
         sudo microk8s.kubectl create serviceaccount --namespace kube-system tiller
         sudo microk8s.kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
         sudo helm init --service-account tiller
         sudo microk8s.kubectl -n kube-system wait --for=condition=Ready pod -l name=tiller --timeout=<< parameters.kubectl_timeout >>s
+      else
+        echo "No dependencies to install for this Helm version."
+      fi
 
   - run:
       name: Create values file
