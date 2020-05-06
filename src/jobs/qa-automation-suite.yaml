@@ -35,8 +35,6 @@ environment:
   RP_ENDPOINT: https://reportportal.dev.codacy.org
   SELENIUM_DRIVER_URL: http://localhost:4444/wd/hub
   HUB_URL: http://localhost:4444/wd/hub
-  JAVA_OPTS: -Xss256m -Xmx512m
-  MAVEN_OPTS: -showversion -Xms256m -Xmx512m
 
 steps:
   - attach_workspace:
