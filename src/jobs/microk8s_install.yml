@@ -145,5 +145,10 @@ steps:
         sudo helm repo add default << parameters.helm_repo >>
 
         # if chart_version is an empty string then the latest version of the chart is installed
-        sudo helm install --name << parameters.chart_name >> default/<< parameters.chart_name >> --timeout << parameters.helm_timeout >> \
-          --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>"
+        if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
+          sudo helm install --name << parameters.chart_name >> default/<< parameters.chart_name >> --timeout << parameters.helm_timeout >> \
+            --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>"
+        else
+          sudo helm install << parameters.chart_name >> default/<< parameters.chart_name >> --timeout <<parameters.helm_timeout >>s \
+            --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>"
+        fi
