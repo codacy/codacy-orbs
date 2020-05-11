@@ -103,6 +103,15 @@ steps:
         # Wait for kube-dns and hostpath-provisioner, or pods will quickly enter a crashloop
         sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=kube-dns --timeout=<< parameters.kubectl_timeout >>s
         sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=hostpath-provisioner --timeout=<< parameters.kubectl_timeout >>s
+        if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
+          echo "Not changing KUBECONFIG"
+        else
+          echo "Changing KUBECONFIG for Helm3 compatibility"
+          mkdir /etc/microk8s
+          microk8s.config > /etc/microk8s/microk8s.conf
+          export KUBECONFIG=/etc/microk8s/microk8s.conf
+        fi
+        echo "KUBECONFIG: $KUBECONFIG"
 
   - run:
       name: Install Helm
