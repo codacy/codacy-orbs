@@ -2,6 +2,12 @@ description: "A job to deploy latest dev components to self-hosted"
 
 executor: do
 
+parameters:
+  environment:
+    description: The environment to poll (dev/sandbox/release).
+    type: string
+    default: "dev"
+
 steps:
   - deploy:
       name: Set cluster to digital ocean
@@ -11,7 +17,7 @@ steps:
   - deploy:
       name: Poll for installation availability
       command: |
-        helm poll -r codacy
+        helm poll -r codacy-<< parameters.environment >>
   - deploy:
       name: Trigger workflow to deploy dev components
       command: |
