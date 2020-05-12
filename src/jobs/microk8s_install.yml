@@ -143,6 +143,7 @@ steps:
       name: Install to microk8s from chart repo
       command: |
         sudo helm repo add default << parameters.helm_repo >>
+        sudo microk8s.kubectl create namespace << parameters.namespace >>
 
         # if chart_version is an empty string then the latest version of the chart is installed
         if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
