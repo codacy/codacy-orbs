@@ -17,7 +17,7 @@ steps:
   - deploy:
       name: Poll for installation availability
       command: |
-        helm poll -r codacy-<< parameters.environment >>
+        helm poll -r codacy-<< parameters.environment >> -n codacy-<< parameters.environment >>
   - deploy:
       name: Trigger workflow to deploy dev components
       command: |
