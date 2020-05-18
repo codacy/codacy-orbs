@@ -5,6 +5,10 @@ parameters:
     description: If a version.sbt file should be written after version is generated
     type: boolean
     default: false
+  overwrite_package_json_version:
+    description: If the version in `package.json` should be overwritten after version is generated
+    type: boolean
+    default: false
   update_submodules:
     type: boolean
     default: false
@@ -41,6 +45,16 @@ steps:
         - run:
             name: Set SBT version
             command: echo "version in ThisBuild := \"$(cat .version)\"" > version.sbt
+
+  - when:
+      condition: <<parameters.overwrite_package_json_version>>
+      steps:
+        - run:
+            name: Set package.json version
+            command: |
+              mv package.json temp.json
+              jq -r ".version |= \"$(cat .version)\"" temp.json > package.json
+              rm temp.json
 
   - when:
       condition: <<parameters.update_submodules>>
