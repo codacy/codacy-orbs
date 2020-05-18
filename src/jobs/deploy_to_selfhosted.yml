@@ -3,10 +3,14 @@ description: "A job to deploy latest dev components to self-hosted"
 executor: do
 
 parameters:
-  environment:
-    description: The environment to poll (dev/sandbox/release).
+  release:
+    description: The helm release name to be installed.
     type: string
-    default: "dev"
+    default: "codacy-dev"
+  namespace:
+    description: The target namespace for the release.
+    type: string
+    default: "codacy-dev"
 
 steps:
   - deploy:
@@ -17,7 +21,7 @@ steps:
   - deploy:
       name: Poll for installation availability
       command: |
-        helm poll -r codacy-<< parameters.environment >> -n codacy-<< parameters.environment >>
+        helm poll -r << parameters.release >> -n << parameters.namespace >>
   - deploy:
       name: Trigger workflow to deploy dev components
       command: |
