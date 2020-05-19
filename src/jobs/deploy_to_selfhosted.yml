@@ -2,6 +2,16 @@ description: "A job to deploy latest dev components to self-hosted"
 
 executor: do
 
+parameters:
+  release:
+    description: The helm release name to be installed.
+    type: string
+    default: "codacy-dev"
+  namespace:
+    description: The target namespace for the release.
+    type: string
+    default: "codacy-dev"
+
 steps:
   - deploy:
       name: Set cluster to digital ocean
@@ -11,7 +21,7 @@ steps:
   - deploy:
       name: Poll for installation availability
       command: |
-        helm poll -r codacy
+        helm poll -r << parameters.release >> -n << parameters.namespace >>
   - deploy:
       name: Trigger workflow to deploy dev components
       command: |
