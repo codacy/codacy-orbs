@@ -105,7 +105,7 @@ workflows:
       - codacy/microk8s_install:
           name: install_k8s-1.15_helm-3.2
           helm_repo: "https://charts.codacy.com/unstable"
-          chart_version: $(cat .version)
+          chart_version: "latest"
           microk8s_channel: "1.15/stable"
           helm_version: "v3.2.0"
           <<: *helm_values
