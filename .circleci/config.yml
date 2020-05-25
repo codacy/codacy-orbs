@@ -109,7 +109,6 @@ workflows:
       #     microk8s_channel: "1.15/stable"
       #     helm_version: "v3.2.0"
       #     <<: *helm_values
-  
       - lint
 
       - codacy/checkout_and_version:
