@@ -122,6 +122,7 @@ workflows:
 
       - codacy/tag_version:
           name: tag_version
+          context: CodacyAWS
           requires:
             - pack_and_validate
 
