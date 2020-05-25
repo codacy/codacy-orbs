@@ -14,6 +14,35 @@ references:
       - image: singapore/lint-condo@sha256:b5edd1f14371b18d4446adc032348663acae8e6c65d0052a74d6ee1feb246107
     working_directory: ~/workdir
 
+  helm_values: &helm_values
+    microk8s_values_content: |
+      global:
+        imagePullSecrets:
+          - name: docker-credentials
+        play:
+          cryptoSecret: "TEST_STRING"
+        akka:
+          sessionSecret: "TEST_STRING"
+        filestore:
+          contentsSecret: "TEST_STRING"
+          uuidSecret: "TEST_STRING"
+        cacheSecret: "TEST_STRING"
+        codacy:
+          crow:
+            url: "http://localhost:9000"
+      listener:
+        persistence:
+          claim:
+            size: 8Gi
+        nfsserverprovisioner:
+          persistence:
+            size: 10Gi
+      minio:
+        persistence:
+          size: 10Gi
+      rabbitmq-ha:
+        replicaCount: 1
+
 jobs:
   pack_and_validate:
     <<: *circleci_job
@@ -73,36 +102,44 @@ workflows:
 
   pack_validate_publish:
     jobs:
-      - lint
+      - codacy/microk8s_install:
+        name: install_k8s-1.15_helm-3.2
+        helm_repo: "https://charts.codacy.com/unstable"
+        chart_version: $(cat .version)
+        microk8s_channel: "1.15/stable"
+        helm_version: "v3.2.0"
+        <<: *helm_values
+  
+      # - lint
 
-      - codacy/checkout_and_version:
-          name: checkout_and_version
+      # - codacy/checkout_and_version:
+      #     name: checkout_and_version
 
-      - pack_and_validate:
-          context: CodacyCircleCI
-          requires:
-            - checkout_and_version
-            - lint
+      # - pack_and_validate:
+      #     context: CodacyCircleCI
+      #     requires:
+      #       - checkout_and_version
+      #       - lint
 
-      - codacy/tag_version:
-          name: tag_version
-          requires:
-            - pack_and_validate
+      # - codacy/tag_version:
+      #     name: tag_version
+      #     requires:
+      #       - pack_and_validate
 
-      - publish_dev:
-          context: CodacyCircleCI
-          requires:
-            - tag_version
-          filters:
-            branches:
-              ignore:
-                - master
+      # - publish_dev:
+      #     context: CodacyCircleCI
+      #     requires:
+      #       - tag_version
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - master
 
-      - publish_prod:
-          context: CodacyCircleCI
-          requires:
-            - tag_version
-          filters:
-            branches:
-              only:
-                - master
+      # - publish_prod:
+      #     context: CodacyCircleCI
+      #     requires:
+      #       - tag_version
+      #     filters:
+      #       branches:
+      #         only:
+      #           - master
