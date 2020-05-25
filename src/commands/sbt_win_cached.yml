@@ -1,0 +1,76 @@
+description: >
+  Run a generic Sbt command restoring the cache before and saving it after
+
+parameters:
+  cmd_name:
+    description: "Name of the step"
+    type: string
+    default: ""
+  cmd:
+    description: "SBT command to run"
+    type: string
+  cache_prefix:
+    description: "The prefix of cache to be used"
+    type: string
+    default: sbt-cache-032020
+  store_test_results_path:
+    description: "The path to search for test results to upload to CircleCI"
+    type: string
+    default: ""
+
+steps:
+
+  - restore_cache:
+      keys:
+        - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
+        - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}
+        - << parameters.cache_prefix >>-{{ .Branch }}
+        - << parameters.cache_prefix >>
+
+  - when:
+      condition: <<parameters.cmd_name>>
+      steps:
+        - run:
+            name: Unpacking Caches
+            command: |
+              if ((Test-Path "$HOME/targets.tar.gz")) {
+                echo "cache found"
+                if ((Test-Path "target")) {
+                  echo "local workspace exists, skipping"
+                } else {
+                  echo "unpacking cache"
+                  tar -xf ~/targets.tar.gz
+                }
+              } else {
+                echo "no cache found"
+              }
+        - run:
+            name: << parameters.cmd_name >>
+            command: << parameters.cmd >>
+
+  - unless:
+      condition: <<parameters.cmd_name>>
+      steps:
+        - run:
+            name: Unpacking Caches
+            command: |
+              if ((Test-Path "$HOME/targets.tar.gz")) {
+                echo "cache found"
+                if ((Test-Path "target")) {
+                  echo "local workspace exists, skipping"
+                } else {
+                  echo "unpacking cache"
+                  tar -xf ~/targets.tar.gz
+                }
+              } else {
+                echo "no cache found"
+              }
+        - run:
+            name: SBT command - << parameters.cmd >>
+            command: << parameters.cmd >>
+
+  - when:
+      condition: << parameters.store_test_results_path >>
+      steps:
+        - store_test_results:
+            path: << parameters.store_test_results_path >>
