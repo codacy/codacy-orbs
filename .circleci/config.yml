@@ -36,6 +36,7 @@ references:
           crow:
             url: "http://localhost:9000"
       activities:
+        # Check how to re-enable this
         replicaCount: 0
         resources:
           limits:
@@ -44,6 +45,17 @@ references:
           requests:
             cpu: 100m
             memory: 1000Mi
+
+      codacy-api:
+        replicaCount: 1
+        resources:
+          limits:
+            cpu: 1000m
+            memory: 2000Mi
+          requests:
+            cpu: 100m
+            memory: 1000Mi
+
       listener:
         persistence:
           claim:
