@@ -19,18 +19,24 @@ references:
       global:
         imagePullSecrets:
           - name: docker-credentials
-        play:
-          cryptoSecret: "TEST_STRING"
+        imagePullSecrets:
+          - name: docker-credentials
+        codacy:
+          url: "https://localhost"
+          backendUrl: "https://localhost"
         akka:
-          sessionSecret: "TEST_STRING"
+          sessionSecret: "e4AsBnEgWjfREd88mhULwdBojmjLJXWU5xusNZOZXX5cOANonRzXauSgMMZWwjMWdaJnTu6rzrZnopiPvpKwGaI1qHXDdGe2iUZVufXB6D2nJaDXAwKxVYSJD5ww5OpK7M3VhQpgDB6LGhAh4hdfE9mIHWFuBMWcDrdonYo"
+        play:
+          cryptoSecret: "Dwy2xw0Ycv5G4tC68vW3v1W2nQaPJSfaRv09i5bKC1oeESfUkuj2uVVkngC0yVHM01J1wMlZRfW3hzH3SvLuhDXKuAOpOSF5kdlZFcKfYGzU808w0meS48YYDF8TN1SqpzSjvw9N5l0UbbIhg0rPbL9njB3qx9mbvTGU"
         filestore:
-          contentsSecret: "TEST_STRING"
-          uuidSecret: "TEST_STRING"
-        cacheSecret: "TEST_STRING"
+          contentsSecret: "s0inkqKFKM7jTw0ctUJEKz6HZHGdax6nTZFvNy2ADN47mS9QTghqy6QEwJcB7qiXITD3hLTqnLUpmMtCHTs2SfffgXxGPFpuiTj3XDiCG1sTKqykhdpoooCsBZpbqfySaWvQ21OdAfVFYkauC8cbsq8ezdKJud2nBI"
+          uuidSecret: "B7MrJaBp49IIB1wt4Yz31TPzj0hl24h0823Dge4Tn9pON9vjQl4OhsJNfsawRR0FG8mjm7aU4rEVD9fIupYBrGS5nD3fP7xfOX2wL6nYBVHh3pFLWIT7CwWHU9t5CDfJnmJsuwRNE3mhAIVkST4ZSCDERHXGj3S1p9JN40"
+        cacheSecret: "vlWdrGm0TKdv4X66kXurTi7IJ1gQ0VrGj4yajWaGPciwsAPVovAJuQKtWmiNAXPQ4G06IASNJMio3lEcI4QG8cgfDL1xqbvxxAhhoB1kUmZB6DOcRIeMbcfzHaXg22xamyP1IlrvSADakIvCPlZ6lzoHhiTDKtQoSkcRY"
         codacy:
           crow:
             url: "http://localhost:9000"
       activities:
+        replicaCount: 0
         resources:
           limits:
             cpu: 1000m
