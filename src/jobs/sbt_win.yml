@@ -2,9 +2,6 @@ description: "A default sbt job"
 
 executor: win
 
-orbs:
-  win: circleci/windows@2.2.0
-
 parameters:
   cmd:
     description: "SBT command to run"
