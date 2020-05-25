@@ -106,7 +106,7 @@ workflows:
           context: CodacyAWS
           name: install_k8s-1.15_helm-3.2
           helm_repo: "https://charts.codacy.com/stable"
-          chart_version: "1.0.0"
+          chart_version: "1.0.1"
           microk8s_channel: "1.15"
           helm_version: "v3.2.0"
           <<: *helm_values
