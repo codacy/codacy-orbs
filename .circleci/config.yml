@@ -106,7 +106,7 @@ workflows:
           name: install_k8s-1.15_helm-3.2
           helm_repo: "https://charts.codacy.com/stable"
           chart_version: "latest"
-          microk8s_channel: "1.15/stable"
+          microk8s_channel: "1.1.0"
           helm_version: "v3.2.0"
           <<: *helm_values
       # - lint
