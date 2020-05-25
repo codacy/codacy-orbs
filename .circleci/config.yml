@@ -6,7 +6,7 @@ orbs:
 references:
   circleci_job: &circleci_job
     docker:
-      - image: circleci/circleci-cli:0.1.5879
+      - image: circleci/circleci-cli:0.1.8
     working_directory: ~/workdir
 
   lint_job: &lint_job
