@@ -144,6 +144,7 @@ steps:
       command: |
         sudo helm repo add default << parameters.helm_repo >>
         sudo microk8s.kubectl create namespace << parameters.namespace >>
+        sudo helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 
         # updating local repo
         sudo helm repo update
