@@ -46,7 +46,8 @@ steps:
   - run:
       name: Download and install sbt
       command: |
-        bash <(curl -Ls https://get.scoop.sh)
+        wget -O install_scoop.sh https://get.scoop.sh
+        source install_scoop.sh
         scoop install sbt
   - run:
       name: Setup AWS Credentials
