@@ -169,6 +169,8 @@ steps:
         sudo microk8s.kubectl create namespace << parameters.namespace >>
         sudo helm repo add stable https://kubernetes-charts.storage.googleapis.com/
 
+        sudo microk8s.kubectl create secret docker-registry docker-credentials --docker-username=$DOCKER_USER --docker-password=$DOCKER_PASS --namespace codacy
+
         # updating local repo
         sudo helm repo update
 
