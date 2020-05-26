@@ -88,7 +88,11 @@ steps:
           return 1
         }
 
+        echo "1"
+
         sudo microk8s.start && microk8s_wait_ready << parameters.microk8s_wait_retries >>
+
+        echo "2"
 
         # enabling plugins one at a time to prevent a race condition
         # see https://github.com/ubuntu/microk8s/issues/706
@@ -96,20 +100,39 @@ steps:
         sudo microk8s.enable storage && microk8s_wait_ready << parameters.microk8s_wait_retries >>
         sudo microk8s.enable ingress && microk8s_wait_ready << parameters.microk8s_wait_retries >>
 
+        echo "3"
+
         # restart to make sure the apparmor profile is correctly created
         # see https://github.com/ubuntu/microk8s/issues/493#issuecomment-498167435
         sudo microk8s.stop && sudo microk8s.start && microk8s_wait_ready << parameters.microk8s_wait_retries >>
 
+        echo "4"
         sudo microk8s.kubectl wait --for condition=Ready pods --all
+
+        echo "5"
 
         # Wait for kube-dns and hostpath-provisioner, or pods will quickly enter a crashloop
         sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=kube-dns --timeout=<< parameters.kubectl_timeout >>s
+
+        echo "6"
         sudo microk8s_wait_ready << parameters.microk8s_wait_retries >>
+
+        echo "7"
         sudo microk8s.kubectl wait --for condition=Ready pods --all
 
+        echo "8"
+
         sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=hostpath-provisioner --timeout=<< parameters.kubectl_timeout >>s
+
+        echo "9"
+
         sudo microk8s_wait_ready << parameters.microk8s_wait_retries >>
+
+        echo "10"
+
         sudo microk8s.kubectl wait --for condition=Ready pods --all
+
+        echo "11"
 
   - run:
       name: Install Helm
