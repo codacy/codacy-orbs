@@ -107,15 +107,15 @@ steps:
         sudo microk8s.stop && sudo microk8s.start && microk8s_wait_ready << parameters.microk8s_wait_retries >>
 
         echo "5"
+        sudo microk8s.kubectl wait --for condition=Ready pods --all
+
+        echo "6"
 
         # Wait for kube-dns and hostpath-provisioner, or pods will quickly enter a crashloop
         sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=kube-dns --timeout=<< parameters.kubectl_timeout >>s
 
-        echo "6"
-        sudo microk8s_wait_ready << parameters.microk8s_wait_retries >>
-
         echo "7"
-        sudo microk8s.kubectl wait --for condition=Ready pods --all
+        sudo microk8s_wait_ready << parameters.microk8s_wait_retries >>
 
         echo "8"
 
@@ -126,10 +126,6 @@ steps:
         sudo microk8s_wait_ready << parameters.microk8s_wait_retries >>
 
         echo "10"
-
-        sudo microk8s.kubectl wait --for condition=Ready pods --all
-
-        echo "11"
 
   - run:
       name: Install Helm
