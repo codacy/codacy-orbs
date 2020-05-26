@@ -107,7 +107,7 @@ steps:
         sudo microk8s.stop && sudo microk8s.start && microk8s_wait_ready << parameters.microk8s_wait_retries >>
 
         echo "5"
-        sudo microk8s.kubectl wait --for condition=Ready pods --all
+        sudo microk8s_wait_ready << parameters.microk8s_wait_retries >>
 
         echo "6"
 
