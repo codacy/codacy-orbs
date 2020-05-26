@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  codacy: codacy/base@dev:4.1.2-microk8sverify.37.e44f3f8
+  codacy: codacy/base@dev:4.1.2-microk8sverify.39.d54e5bf
 
 references:
   circleci_job: &circleci_job
