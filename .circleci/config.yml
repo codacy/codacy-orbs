@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  codacy: codacy/base@dev:4.1.2-microk8sverify.44.db4b440
+  codacy: codacy/base@dev:4.1.2-microk8sverify.46.f8071c9
 
 references:
   circleci_job: &circleci_job
@@ -128,39 +128,39 @@ workflows:
 
   pack_validate_publish:
     jobs:
-      # - codacy/microk8s_install:
-      #     context: CodacyAWS
-      #     name: install_k8s-1.15_helm-3.2
-      #     helm_repo: "https://charts.codacy.com/stable"
-      #     chart_version: "1.0.1"
-      #     microk8s_channel: "1.15"
-      #     helm_version: "v3.2.0"
-      #     <<: *helm_values
-      - lint
-
-      - codacy/checkout_and_version:
-          name: checkout_and_version
-
-      - pack_and_validate:
-          context: CodacyCircleCI
-          requires:
-            - checkout_and_version
-            - lint
-
-      - codacy/tag_version:
-          name: tag_version
+      - codacy/microk8s_install:
           context: CodacyAWS
-          requires:
-            - pack_and_validate
+          name: install_k8s-1.15_helm-3.2
+          helm_repo: "https://charts.codacy.com/stable"
+          chart_version: "1.0.1"
+          microk8s_channel: "1.15"
+          helm_version: "v3.2.0"
+          <<: *helm_values
+      # - lint
 
-      - publish_dev:
-          context: CodacyCircleCI
-          requires:
-            - tag_version
-          filters:
-            branches:
-              ignore:
-                - master
+      # - codacy/checkout_and_version:
+      #     name: checkout_and_version
+
+      # - pack_and_validate:
+      #     context: CodacyCircleCI
+      #     requires:
+      #       - checkout_and_version
+      #       - lint
+
+      # - codacy/tag_version:
+      #     name: tag_version
+      #     context: CodacyAWS
+      #     requires:
+      #       - pack_and_validate
+
+      # - publish_dev:
+      #     context: CodacyCircleCI
+      #     requires:
+      #       - tag_version
+      #     filters:
+      #       branches:
+      #         ignore:
+      #           - master
 
       # - publish_prod:
       #     context: CodacyCircleCI
