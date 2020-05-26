@@ -61,18 +61,18 @@ references:
       #     enabled: true
       #     size: 10Gi
 
-      defaultdb:
-        create: true
-      analysisdb:
-        create: true
-      resultsdb:
-        create: true
-      metricsdb:
-        create: true
-      filestoredb:
-        create: true
-      jobsdb:
-        create: true
+        defaultdb:
+          create: true
+        analysisdb:
+          create: true
+        resultsdb:
+          create: true
+        metricsdb:
+          create: true
+        filestoredb:
+          create: true
+        jobsdb:
+          create: true
 
       activities:
         activitiesdb:
@@ -90,6 +90,8 @@ references:
         persistence:
           claim:
             size: 2Gi
+        listenerdb:
+          create: true
         nfsserverprovisioner:
           persistence:
             size: 3Gi
