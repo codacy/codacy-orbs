@@ -188,4 +188,4 @@ steps:
 
         sudo bash -c 'sudo microk8s.config > ~/.kube/config'
         sudo helm install << parameters.chart_name >> default/<< parameters.chart_name >> --timeout <<parameters.helm_timeout >>s \
-          --namespace << parameters.namespace >> --values values-production.yaml --values  microk8s-values.yaml --version "<< parameters.chart_version >>" --debug --atomic
+          --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>" --debug --atomic
