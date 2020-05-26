@@ -56,10 +56,35 @@ references:
       #       cpu: 100m
       #       memory: 1000Mi
 
-      postgres:
-        persistence:
-          enabled: true
-          size: 10Gi
+      # postgres:
+      #   persistence:
+      #     enabled: true
+      #     size: 10Gi
+
+      defaultdb:
+        create: true
+      analysisdb:
+        create: true
+      resultsdb:
+        create: true
+      metricsdb:
+        create: true
+      filestoredb:
+        create: true
+      jobsdb:
+        create: true
+
+      activities:
+        activitiesdb:
+          create: true
+
+      crow:
+        crowdb:
+          create: true
+
+      hotspots-api:
+        hotspotsdb:
+          create: true
 
       listener:
         persistence:
