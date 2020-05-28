@@ -9,7 +9,7 @@ parameters:
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
-    default: sbt-cache-032020
+    default: sbt-cache-052020
   aws_profile:
     description: "The AWS profile to be used"
     type: string
