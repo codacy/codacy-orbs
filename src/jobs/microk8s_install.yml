@@ -44,6 +44,18 @@ parameters:
     description: "Extra flags added to the end of the helm install command"
     type: string
     default: ""
+  helm_test:
+    description: "Should run helm test"
+    type: boolean
+    default: true
+  docker_username:
+    description: "Used to create the docker credentials in the namespace"
+    type: string
+    default: ""
+  docker_password:
+    description: "Used to create the docker credentials in the namespace"
+    type: string
+    default: ""
 
 executor: machine
 resource_class: large
@@ -150,13 +162,24 @@ steps:
         sudo helm repo add default << parameters.helm_repo >>
         sudo helm repo update
         sudo microk8s.kubectl create namespace << parameters.namespace >>
-
+        sudo microk8s.kubectl create secret docker-registry docker-credentials --docker-username=<< parameters.docker_username >> --docker-password=<< parameters.docker_password >> --namespace << parameters.namespace >>
         # if chart_version is an empty string then the latest version of the chart is installed
         if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
-          sudo helm install --name << parameters.chart_name >> default/<< parameters.chart_name >> --timeout << parameters.helm_timeout >> \
-            --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>" << parameters.helm_install_extra_flags >>
+          sudo helm install --debug --name << parameters.chart_name >> default/<< parameters.chart_name >> --timeout << parameters.helm_timeout >> \
+            --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>" --atomic << parameters.helm_install_extra_flags >>
         else
           sudo bash -c 'sudo microk8s.config > ~/.kube/config'
-          sudo helm install << parameters.chart_name >> default/<< parameters.chart_name >> --timeout <<parameters.helm_timeout >>s \
-            --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>" << parameters.helm_install_extra_flags >>
+          sudo helm install --debug << parameters.chart_name >> default/<< parameters.chart_name >> --timeout <<parameters.helm_timeout >>s \
+            --namespace << parameters.namespace >> -f microk8s-values.yaml --version "<< parameters.chart_version >>" --atomic << parameters.helm_install_extra_flags >>
         fi
+        sudo microk8s.kubectl get events --namespace << parameters.namespace >>
+
+  - when:
+      condition: << parameters.helm_test >>
+      steps:
+        - run: |
+            if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
+              sudo helm test << parameters.chart_name >>
+            else
+              sudo helm test << parameters.chart_name >> -n << parameters.namespace >>
+            fi
