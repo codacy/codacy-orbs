@@ -162,7 +162,11 @@ steps:
         sudo helm repo add default << parameters.helm_repo >>
         sudo helm repo update
         sudo microk8s.kubectl create namespace << parameters.namespace >>
-        sudo microk8s.kubectl create secret docker-registry docker-credentials --docker-username=<< parameters.docker_username >> --docker-password=<< parameters.docker_password >> --namespace << parameters.namespace >>
+
+        if [ -z "<< parameters.docker_username >>" ]; then
+          sudo microk8s.kubectl create secret docker-registry docker-credentials --docker-username=<< parameters.docker_username >> --docker-password=<< parameters.docker_password >> --namespace << parameters.namespace >>
+        fi
+
         # if chart_version is an empty string then the latest version of the chart is installed
         if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
           sudo helm install --debug --name << parameters.chart_name >> default/<< parameters.chart_name >> --timeout << parameters.helm_timeout >> \
