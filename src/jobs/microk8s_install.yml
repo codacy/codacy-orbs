@@ -163,7 +163,7 @@ steps:
         sudo helm repo update
         sudo microk8s.kubectl create namespace << parameters.namespace >>
 
-        if [ -z "<< parameters.docker_username >>" ]; then
+        if [ ! -z "<< parameters.docker_username >>" ]; then
           sudo microk8s.kubectl create secret docker-registry docker-credentials --docker-username=<< parameters.docker_username >> --docker-password=<< parameters.docker_password >> --namespace << parameters.namespace >>
         fi
 
