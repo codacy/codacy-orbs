@@ -58,7 +58,7 @@ parameters:
     default: ""
 
 executor: machine
-resource_class: large
+resource_class: xlarge
 
 steps:
   - attach_workspace:
@@ -219,4 +219,4 @@ steps:
                 echo -e "$(( COUNT++ ))... \c";
                 sleep 10;
               done
-              [[ $COUNT -eq $ATTEMPTS ]] && echo "Could not verify that the analysis ran“ && (exit 1)
+              [[ $COUNT -eq $ATTEMPTS ]] && echo "Could not verify that the analysis ran" && (exit 1)
