@@ -57,7 +57,7 @@ steps:
         } else {
           echo "no persisted workspace found"
         }
-  - sbt_cached:
+  - sbt_win_cached:
       cmd: << parameters.cmd >>
       cache_prefix: << parameters.cache_prefix >>
   - when:
