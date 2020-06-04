@@ -181,9 +181,37 @@ steps:
   - when:
       condition: << parameters.helm_test >>
       steps:
-        - run: |
-            if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
-              sudo helm test << parameters.chart_name >>
-            else
-              sudo helm test << parameters.chart_name >> -n << parameters.namespace >>
-            fi
+        - deploy:
+            name: Test installation
+            command: |
+              if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
+                sudo helm test << parameters.chart_name >>
+              else
+                sudo helm test << parameters.chart_name >> -n << parameters.namespace >>
+              fi
+
+              echo "\n\nTrying to run an analysis...."
+              echo "Only works for play crypto secret = \"TEST_STRING_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789_0123456789\"\n\n"
+
+              # Creating an API token for user with id=1
+              sudo microk8s.kubectl exec -it codacy-postgres-0 \
+              -n codacy -- psql "postgresql://codacy:codacy@localhost/accounts" \
+              -c "INSERT INTO \"ApiTokens\" (\"accountId\",\"clientId\",\"secretId\") VALUES  ('1','fc15acbf7b5aab4afe19c588c2ce1e1cc86742a0c08ed7fb540190019059eb0d','cef5fa6242d5c519e59836ee1b7f3afe93864d082ec0b9aaa822072c668a5bff3dab8829bf48159718252e725549701a514896b0efe09136b2f9b3a0ac1721db');"
+
+              # Port forward codacy-api
+              sudo microk8s.kubectl port-forward deployment/codacy-api -n codacy 9000 &
+
+              # Add a project to user with id=1 using the token
+              curl -i -H "Content-Type: application/json" -H "api-token:fWz6plit8jzFDLylH0tx" --data '{ "url": "https://github.com/DevCodacyTestUser/codacytest" }' http://localhost:9000/2.0/project/create/public
+
+              # Wait for project analysed
+              COUNT=0
+              ATTEMPTS=30
+              OUT="not found"
+              until $( [[ $OUT == *"Analysed"* ]]  || [[ $COUNT -eq $ATTEMPTS ]]); do
+                OUT=$(curl  -H "Content-Type: application/json" -H "api-token:fWz6plit8jzFDLylH0tx"  http://localhost:9000/2.0/jaime_1/codacytest/commit/f0c9fc5255350d4bfa2f52bfceed6465603a84f1 );
+                echo $OUT;
+                echo -e "$(( COUNT++ ))... \c";
+                sleep 10;
+              done
+              [[ $COUNT -eq $ATTEMPTS ]] && echo "Could not verify that the analysis ran“ && (exit 1)
