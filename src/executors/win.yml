@@ -5,7 +5,6 @@ description: >
 machine:
   image: windows-server-2019-vs2019:stable
   resource_class: windows.medium
-  # shell: powershell.exe -ExecutionPolicy Bypass
-  shell: bash
+  shell: powershell.exe -ExecutionPolicy Bypass
 
 working_directory: ~/workdir

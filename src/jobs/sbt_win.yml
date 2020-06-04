@@ -46,8 +46,7 @@ steps:
   - run:
       name: Download and install sbt
       command: |
-        wget -O install_scoop.sh https://get.scoop.sh
-        source install_scoop.sh
+        Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop install sbt
   - run:
       name: Setup AWS Credentials
