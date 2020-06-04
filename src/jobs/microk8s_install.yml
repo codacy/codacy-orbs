@@ -112,6 +112,9 @@ steps:
         sudo microk8s.enable storage && microk8s_wait_ready << parameters.microk8s_wait_retries >>
         sudo microk8s.enable ingress && microk8s_wait_ready << parameters.microk8s_wait_retries >>
 
+        sudo sudo mkdir -p /var/snap/microk8s/current/args
+        sudo sh -c  "echo "--allow-privileged=true" >> /var/snap/microk8s/current/args/kube-apiserver"
+
         # restart to make sure the apparmor profile is correctly created
         # see https://github.com/ubuntu/microk8s/issues/493#issuecomment-498167435
         sudo microk8s.stop && sudo microk8s.start && microk8s_wait_ready << parameters.microk8s_wait_retries >>
