@@ -58,7 +58,7 @@ parameters:
     default: ""
 
 executor: machine
-resource_class: large
+resource_class: xlarge
 
 steps:
   - attach_workspace:
