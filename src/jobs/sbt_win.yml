@@ -49,13 +49,6 @@ steps:
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
         scoop install sbt
   - run:
-      name: Setup AWS Credentials
-      command: |
-        mkdir -p ~/.aws && touch ~/.aws/credentials
-        cat >> ~/.aws/credentials \<< EOF
-        << parameters.credentials_file_content >>
-        EOF
-  - run:
       name: Uncompress local targets
       command: |
         if [[ -f "targets.tar.gz" ]]; then
