@@ -95,6 +95,7 @@ steps:
             set -e
 
             if [[ $MICROK8S_STATUS -eq 0 ]] && [[ $K8S_STATUS -eq 0 ]] ; then
+              sleep 15
               echo "microk8s ready"
               return 0
             fi
