@@ -26,7 +26,7 @@ steps:
       name: Download and install sbt
       command: |
         Invoke-Expression (New-Object System.Net.WebClient).DownloadString('https://get.scoop.sh')
-        scoop install sbt nodejs nvm sudo
+        scoop install sbt
   - run:
       name: Uncompress local targets
       command: |
