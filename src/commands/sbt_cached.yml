@@ -16,7 +16,7 @@ parameters:
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
-    default: sbt-cache-032020
+    default: sbt-cache-072020
   store_test_results_path:
     description: "The path to search for test results to upload to CircleCI"
     type: string
