@@ -3,87 +3,60 @@ description: "A job to deploy latest dev components to self-hosted"
 executor: do
 
 parameters:
-  release:
+  chart_name:
     description: The helm release name to be installed.
     type: string
-    default: "codacy-dev"
-  namespace:
-    description: The target namespace for the release.
+    default: "default-release"
+  environment:
+    description: The target environment for the release [dev / sandbox / release].
     type: string
-    default: "codacy-dev"
+    default: "dev"
+  helm_install_extra_flags:
+    description: Extra parameters to be passed to the helm install command.
+    type: string
+    default: ""
 
 steps:
-  - deploy:
+  - run:
       name: Set cluster to digital ocean
       command: |
         doctl auth init -t $DO_TOKEN &>/dev/null
         doctl kubernetes cluster kubeconfig save "$DOKS_CLUSTER_NAME" --set-current-context
-  - deploy:
-      name: Poll for installation availability
+  - run:
+      name: Add unstable repository
       command: |
-        helm poll -r << parameters.release >> -n << parameters.namespace >>
+        helm repo add codacy-unstable https://charts.codacy.com/unstable
+        helm repo update
   - deploy:
-      name: Trigger workflow to deploy dev components
+      name: Fetch values files
       command: |
-        function trigger_remote_workflow {
-            response=$(curl -XPOST -s -H 'Accept: application/json' -H 'x-attribution-login: string' -H 'x-attribution-actor-id: string' -H 'Content-type: application/json' -d '{"branch": "master"}' 'https://circleci.com/api/v2/project/gh/codacy/chart/pipeline' -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
-            echo $response
-        }
+        curl -s -o values-production.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values-production.yaml
+        curl -s -o values.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values.yaml
 
-        function get_workflow_from_pipeline {
-            response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/pipeline/$1/workflow" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
-            echo $response
-        }
+        echo -e "credentials \"app.terraform.io\" { \n  token = \"$TF_AUTH_TOKEN\" \n}" > ./terraformrc
+        echo -e "terraform {\n  required_version = \"~> 0.12\"\n  backend \"remote\" {\n    hostname = \"app.terraform.io\"\n    organization = \"codacy\"\n\n    workspaces {\n      prefix = \"codacy-do-\"\n    }\n  }\n}" > config.tf
 
-        function get_workflow {
-            response=$(curl -s -H 'Accept: application/json' -H 'Content-type: application/json' "https://circleci.com/api/v2/workflow/$1" -H "Circle-Token: $CIRCLE_CI_GITHUB_TOKEN")
-            echo $response
-        }
+        echo '1' | TF_IN_AUTOMATION=1 TF_CLI_CONFIG_FILE=./terraformrc terraform init -input=false -reconfigure
+        TF_IN_AUTOMATION=1 TF_CLI_CONFIG_FILE=./terraformrc terraform workspace select postgres-<<parameters.environment>>
+        TF_IN_AUTOMATION=1 TF_CLI_CONFIG_FILE=./terraformrc terraform output -json > terraform_outputs.json
+        host=$(cat terraform_outputs.json | jq -r '.db_cluster_host | .value')
+        port=$(cat terraform_outputs.json | jq -r '.db_cluster_port | .value')
+        username=$(cat terraform_outputs.json | jq -r '.db_cluster_username | .value')
+        password=$(cat terraform_outputs.json | jq -r '.db_cluster_password | .value')
 
-        function get_workflow_status {
-            response=$(get_workflow $1 | jq -r '.status')
-            echo $response
-        }
+        sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-production.yaml
 
-        function get_remote_workflow_url {
-            workflow=$(get_workflow $1)
-            id=$(echo $workflow | jq -r '.id')
-            number=$(echo $workflow | jq -r '.pipeline_number')
-            echo "https://app.circleci.com/pipelines/github/codacy/chart/$number/workflows/$id"
-        }
+  - deploy:
+      name: Install component
+      command: |
+        version=$(helm search repo codacy-unstable/<< parameters.chart_name >> --devel -o json | jq -r ".[] | .version")
 
-        function wait_for_workflow_started {
-            while [[ "$(get_workflow_from_pipeline $pipelineID | jq -r 'isempty(.items[])')" == "true" ]]; do sleep 2s; echo "Waiting for remote workflow to start..."; done
-        }
-
-        function wait_for_workflow_terminated {
-            status=$(get_workflow_status $workflowID)
-            while [[ "$status" == "running" ]]; do sleep 10s; echo "Waiting for remote workflow to complete... ($status)"; status=$(get_workflow_status $workflowID); done
-
-            if [ "$status" == "success" ] ; then
-                echo "Remote workflow $workflowID execution successful. - $workflowURL"
-                exit 0
-            else
-                echo "Remote workflow $workflowID execution failed ($status). - $workflowURL"
-                exit 1
-            fi
-        }
-
-        response=$(trigger_remote_workflow)
-        workflowState=$(echo $response | jq -r '.state')
-        pipelineID=$(echo $response | jq -r '.id')
-
-        if [ "$workflowState" != "pending" ] && [ "$workflowState" != "running" ] ; then
-            echo "Remote workflow execution failed abruptly!"
-            echo $response
-            exit 1
-        fi
-
-        wait_for_workflow_started
-        remoteWorkflow=$(get_workflow_from_pipeline $pipelineID)
-        workflowID=$(echo $remoteWorkflow | jq -r '.items[0].id')
-        workflowURL=$(get_remote_workflow_url $workflowID)
-
-        echo "Running chart workflow id: $workflowID - $workflowURL"
-        wait_for_workflow_terminated
-
+        helm upgrade --install <<parameters.chart_name>> codacy-unstable/<<parameters.chart_name>> \
+        --devel \
+        --atomic \
+        --timeout=600s \
+        --namespace codacy-<<parameters.environment>> \
+        -f values.yaml \
+        -f values-production.yaml \
+        --version $version \
+        <<parameters.helm_install_extra_flags>>
