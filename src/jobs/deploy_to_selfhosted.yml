@@ -15,6 +15,10 @@ parameters:
     description: Extra parameters to be passed to the helm install command.
     type: string
     default: ""
+  helm_channel:
+    description: The helm channel from which the component chart will be retrieved [unstable / incubator / stable].
+    type: string
+    default: "unstable"
 
 steps:
   - run:
@@ -25,7 +29,7 @@ steps:
   - run:
       name: Add unstable repository
       command: |
-        helm repo add codacy-unstable https://charts.codacy.com/unstable
+        helm repo add codacy-<<parameters.helm_channel>> https://charts.codacy.com/<<parameters.helm_channel>>
         helm repo update
   - deploy:
       name: Fetch values files
@@ -49,9 +53,9 @@ steps:
   - deploy:
       name: Install component
       command: |
-        version=$(helm search repo codacy-unstable/<< parameters.chart_name >> --devel -o json | jq -r ".[] | .version")
+        version=$(helm search repo codacy-<<parameters.helm_channel>>/<< parameters.chart_name >> --devel -o json | jq -r ".[] | .version")
 
-        helm upgrade --install <<parameters.chart_name>> codacy-unstable/<<parameters.chart_name>> \
+        helm upgrade --install <<parameters.chart_name>> codacy-<<parameters.helm_channel>>/<<parameters.chart_name>> \
         --devel \
         --atomic \
         --timeout=600s \
