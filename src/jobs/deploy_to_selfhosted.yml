@@ -31,15 +31,19 @@ steps:
       command: |
         helm repo add codacy-<<parameters.helm_channel>> https://charts.codacy.com/<<parameters.helm_channel>>
         helm repo update
-  - deploy:
+  - run:
       name: Fetch values files
       command: |
         curl -s -o values-production.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values-production.yaml
         curl -s -o values.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values.yaml
-
+  - run:
+      name: Prepare terraform files
+      command: |
         echo -e "credentials \"app.terraform.io\" { \n  token = \"$TF_AUTH_TOKEN\" \n}" > ./terraformrc
         echo -e "terraform {\n  required_version = \"~> 0.12\"\n  backend \"remote\" {\n    hostname = \"app.terraform.io\"\n    organization = \"codacy\"\n\n    workspaces {\n      prefix = \"codacy-do-\"\n    }\n  }\n}" > config.tf
-
+  - run:
+      name: Replace database values
+      command: |
         echo '1' | TF_IN_AUTOMATION=1 TF_CLI_CONFIG_FILE=./terraformrc terraform init -input=false -reconfigure
         TF_IN_AUTOMATION=1 TF_CLI_CONFIG_FILE=./terraformrc terraform workspace select postgres-<<parameters.environment>>
         TF_IN_AUTOMATION=1 TF_CLI_CONFIG_FILE=./terraformrc terraform output -json > terraform_outputs.json
@@ -47,9 +51,11 @@ steps:
         port=$(cat terraform_outputs.json | jq -r '.db_cluster_port | .value')
         username=$(cat terraform_outputs.json | jq -r '.db_cluster_username | .value')
         password=$(cat terraform_outputs.json | jq -r '.db_cluster_password | .value')
-
         sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-production.yaml
-
+  - run:
+      name: Replace ingress values
+      command: |
+        sed -i "s#<codacy-app.dns.internal>#$CODACY_URL_DEV#g; s#<codacy-api.dns.internal>#$CODACY_URL_DEV#g; s#http://##g" values.yaml
   - deploy:
       name: Install component
       command: |
