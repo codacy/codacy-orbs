@@ -55,7 +55,7 @@ steps:
   - run:
       name: Replace ingress values
       command: |
-        sed -i "s#<codacy-app.dns.internal>#$CODACY_URL_DEV#g; s#<codacy-api.dns.internal>#$CODACY_URL_DEV#g; s#http://##g" values.yaml
+        sed -i "s#codacy.example.com#$CODACY_URL_DEV#g; s#http://##g" values.yaml
   - deploy:
       name: Install component
       command: |
