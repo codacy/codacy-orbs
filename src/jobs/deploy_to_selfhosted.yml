@@ -63,4 +63,18 @@ steps:
         -f values.yaml \
         -f values-production.yaml \
         --version $version \
+        --set global.imagePullSecrets[0].name=docker-credentials \
+        --set global.play.cryptoSecret=$SHARED_PLAY_CRYPTO_SECRET \
+        --set global.akka.sessionSecret=$SHARED_AKKA_SESSION_SECRET \
+        --set global.filestore.contentsSecret=$SHARED_PLAY_CRYPTO_SECRET \
+        --set global.filestore.uuidSecret=$SHARED_PLAY_CRYPTO_SECRET \
+        --set global.cacheSecret=$SHARED_PLAY_CRYPTO_SECRET \
+        --set codacy-api.config.license=$CODACY_LICENSE \
+        --set global.codacy.url=$CODACY_URL \
+        --set global.codacy.crow.url=$CODACY_URL/monitoring \
+        --set global.codacy.backendUrl=$CODACY_URL \
+        --set listener.nfsserverprovisioner.storageClass.name="$RELEASE_NAME-listener-cache-class" \
+        --set global.features.cloneSubmodules=true \
+        --set worker-manager.config.codacy.worker.image=$WORKER_VERSION \
+        --set crow.config.passwordAuth.password=$CROW_PASSWORD \
         <<parameters.helm_install_extra_flags>>
