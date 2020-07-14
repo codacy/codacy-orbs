@@ -58,7 +58,7 @@ steps:
         version=$(helm search repo codacy-<<parameters.helm_channel>>/<< parameters.chart_name >> --devel -o json | jq -r ".[] | .version")
         hostname=$(echo $CODACY_URL_DEV | sed "s#http://##g")
 
-        helm upgrade --install codacy-<<parameters.chart_name>> codacy-<<parameters.helm_channel>>/<<parameters.chart_name>> \
+        helm upgrade --install <<parameters.chart_name>> codacy-<<parameters.helm_channel>>/<<parameters.chart_name>> \
         --devel \
         --atomic \
         --timeout=600s \
