@@ -35,7 +35,7 @@ steps:
       name: Fetch values files
       command: |
         curl -s -o values-production.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values-production.yaml
-        curl -s -o values.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values.yaml
+        curl -s -o values.yaml https://raw.githubusercontent.com/codacy/chart/master/.do/values.yaml
   - run:
       name: Prepare terraform files
       command: |
@@ -52,14 +52,11 @@ steps:
         username=$(cat terraform_outputs.json | jq -r '.db_cluster_username | .value')
         password=$(cat terraform_outputs.json | jq -r '.db_cluster_password | .value')
         sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-production.yaml
-  - run:
-      name: Replace ingress values
-      command: |
-        sed -i "s#codacy.example.com#$CODACY_URL_DEV#g; s#http://##g" values.yaml
   - deploy:
       name: Install component
       command: |
         version=$(helm search repo codacy-<<parameters.helm_channel>>/<< parameters.chart_name >> --devel -o json | jq -r ".[] | .version")
+        hostname=$(echo $CODACY_URL_DEV | sed "s#http://##g")
 
         helm upgrade --install <<parameters.chart_name>> codacy-<<parameters.helm_channel>>/<<parameters.chart_name>> \
         --devel \
@@ -75,12 +72,16 @@ steps:
         --set global.filestore.contentsSecret=$SHARED_PLAY_CRYPTO_SECRET \
         --set global.filestore.uuidSecret=$SHARED_PLAY_CRYPTO_SECRET \
         --set global.cacheSecret=$SHARED_PLAY_CRYPTO_SECRET \
-        --set codacy-api.config.license=$CODACY_LICENSE \
+        --set global.codacy.license=$CODACY_LICENSE \
         --set global.codacy.url=$CODACY_URL_DEV \
         --set global.codacy.crow.url=$CODACY_URL_DEV/monitoring \
         --set global.codacy.backendUrl=$CODACY_URL_DEV \
-        --set listener.nfsserverprovisioner.storageClass.name="$RELEASE_NAME-listener-cache-class" \
+        --set global.metrics.serviceMonitor.enabled=true \
+        --set global.metrics.grafana.enabled=true \
+        --set global.listener.nfsserverprovisioner.storageClass.name="$RELEASE_NAME-listener-cache-class" \
         --set global.features.cloneSubmodules=true \
-        --set worker-manager.config.codacy.worker.image=dev \
-        --set crow.config.passwordAuth.password=$CROW_PASSWORD \
+        --set global.worker-manager.config.codacy.worker.image=dev \
+        --set global.crow.config.passwordAuth.password=$CROW_PASSWORD \
+        --set ingress.hostname.api=$hostname \
+        --set ingress.hostname.app=$hostname \
         <<parameters.helm_install_extra_flags>>
