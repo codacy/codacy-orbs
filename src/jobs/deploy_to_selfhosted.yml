@@ -35,7 +35,7 @@ steps:
       name: Fetch values files
       command: |
         curl -s -o values-production.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values-production.yaml
-        curl -s -o values.yaml https://raw.githubusercontent.com/codacy/chart/master/.do/values.yaml
+        curl -s -o values.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values.yaml
   - run:
       name: Prepare terraform files
       command: |
@@ -78,7 +78,7 @@ steps:
         --set global.codacy.backendUrl=$CODACY_URL_DEV \
         --set global.metrics.serviceMonitor.enabled=true \
         --set global.metrics.grafana.enabled=true \
-        --set global.listener.nfsserverprovisioner.storageClass.name="$RELEASE_NAME-listener-cache-class" \
+        --set global.listener.nfsserverprovisioner.storageClass.name="codacy-<<parameters.environment>>-listener-cache-class" \
         --set global.features.cloneSubmodules=true \
         --set global.worker-manager.config.codacy.worker.image=dev \
         --set global.crow.config.passwordAuth.password=$CROW_PASSWORD \
