@@ -35,7 +35,7 @@ parameters:
   save_cache:
     description: "Whether to save the cache or not at the end of the job"
     type: boolean
-    default: true
+    default: false
   store_test_results:
     description: "Whether to upload the test results back to CircleCI"
     type: boolean
