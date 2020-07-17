@@ -11,6 +11,10 @@ parameters:
     description: The target environment for the release [dev / sandbox / release].
     type: string
     default: "dev"
+  values_file_path:
+    description: Path to the values file inside the codacy chart repository.
+    default: "https://raw.githubusercontent.com/codacy/chart/master/codacy/values-production.yaml"
+    type: "string"
   helm_install_extra_flags:
     description: Extra parameters to be passed to the helm install command.
     type: string
@@ -34,8 +38,7 @@ steps:
   - run:
       name: Fetch values files
       command: |
-        curl -s -o values-production.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values-production.yaml
-        curl -s -o values.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values.yaml
+        curl -s -o values.yaml <<parameters.values_file_path>>
   - run:
       name: Prepare terraform files
       command: |
@@ -51,7 +54,7 @@ steps:
         port=$(cat terraform_outputs.json | jq -r '.db_cluster_port | .value')
         username=$(cat terraform_outputs.json | jq -r '.db_cluster_username | .value')
         password=$(cat terraform_outputs.json | jq -r '.db_cluster_password | .value')
-        sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-production.yaml
+        sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values.yaml
   - deploy:
       name: Install component
       command: |
@@ -64,7 +67,6 @@ steps:
         --timeout=600s \
         --namespace codacy-<<parameters.environment>> \
         -f values.yaml \
-        -f values-production.yaml \
         --version $version \
         --set global.imagePullSecrets[0].name=docker-credentials \
         --set global.play.cryptoSecret=$SHARED_PLAY_CRYPTO_SECRET \
