@@ -67,8 +67,8 @@ steps:
         --atomic \
         --timeout=600s \
         --namespace codacy-<<parameters.environment>> \
-        -f values-production.yaml \
         -f values.yaml \
+        -f values-production.yaml \
         --version $version \
         --set global.imagePullSecrets[0].name=docker-credentials \
         --set global.play.cryptoSecret=$SHARED_PLAY_CRYPTO_SECRET \
