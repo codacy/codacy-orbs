@@ -85,6 +85,7 @@ steps:
         --set global.listener.nfsserverprovisioner.storageClass.name="codacy-<<parameters.environment>>-listener-cache-class" \
         --set global.features.cloneSubmodules=true \
         --set global.worker-manager.config.codacy.worker.image=dev \
+        --set global.crow.config.passwordAuth.username=$CROW_USERNAME \
         --set global.crow.config.passwordAuth.password=$CROW_PASSWORD \
         --set ingress.hostname.api=$hostname \
         --set ingress.hostname.app=$hostname \
