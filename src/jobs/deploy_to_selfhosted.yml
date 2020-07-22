@@ -25,6 +25,9 @@ parameters:
     default: "unstable"
 
 steps:
+  - attach_workspace:
+      at: ~/workdir
+
   - run:
       name: Set cluster to digital ocean
       command: |
