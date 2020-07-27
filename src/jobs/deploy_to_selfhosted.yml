@@ -11,6 +11,10 @@ parameters:
     description: The target environment for the release [dev / sandbox / release].
     type: string
     default: "dev"
+  git_tag:
+    description: The tag (or branch or commit id) from where to get the values files.
+    default: "master"
+    type: "string"
   helm_install_extra_flags:
     description: Extra parameters to be passed to the helm install command.
     type: string
@@ -21,6 +25,9 @@ parameters:
     default: "unstable"
 
 steps:
+  - attach_workspace:
+      at: ~/workdir
+
   - run:
       name: Set cluster to digital ocean
       command: |
@@ -34,8 +41,8 @@ steps:
   - run:
       name: Fetch values files
       command: |
-        curl -s -o values-production.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values-production.yaml
-        curl -s -o values.yaml https://raw.githubusercontent.com/codacy/chart/master/codacy/values.yaml
+        curl -s -o values.yaml "https://raw.githubusercontent.com/codacy/chart/<<parameters.git_tag>>/codacy/values.yaml"
+        curl -s -o values-production.yaml "https://raw.githubusercontent.com/codacy/chart/<<parameters.git_tag>>/codacy/values-production.yaml"
   - run:
       name: Prepare terraform files
       command: |
@@ -55,7 +62,7 @@ steps:
   - deploy:
       name: Install component
       command: |
-        version=$(helm search repo codacy-<<parameters.helm_channel>>/<< parameters.chart_name >> --devel -o json | jq -r ".[] | .version")
+        version=$(cat .version)
         hostname=$(echo $CODACY_URL_DEV | sed "s#http://##g")
 
         helm upgrade --install <<parameters.chart_name>> codacy-<<parameters.helm_channel>>/<<parameters.chart_name>> \
@@ -81,6 +88,7 @@ steps:
         --set global.listener.nfsserverprovisioner.storageClass.name="codacy-<<parameters.environment>>-listener-cache-class" \
         --set global.features.cloneSubmodules=true \
         --set global.worker-manager.config.codacy.worker.image=dev \
+        --set global.crow.config.passwordAuth.username=$CROW_USERNAME \
         --set global.crow.config.passwordAuth.password=$CROW_PASSWORD \
         --set ingress.hostname.api=$hostname \
         --set ingress.hostname.app=$hostname \
