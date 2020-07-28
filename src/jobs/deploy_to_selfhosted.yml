@@ -42,6 +42,7 @@ steps:
       name: Fetch values files
       command: |
         curl -s -o values.yaml "https://raw.githubusercontent.com/codacy/chart/<<parameters.git_tag>>/codacy/values.yaml"
+        curl -s -o values-selfhosted.yaml "https://raw.githubusercontent.com/codacy/chart/<<parameters.git_tag>>/.do/values.yaml"
         curl -s -o values-production.yaml "https://raw.githubusercontent.com/codacy/chart/<<parameters.git_tag>>/codacy/values-production.yaml"
   - run:
       name: Prepare terraform files
@@ -58,6 +59,7 @@ steps:
         port=$(cat terraform_outputs.json | jq -r '.db_cluster_port | .value')
         username=$(cat terraform_outputs.json | jq -r '.db_cluster_username | .value')
         password=$(cat terraform_outputs.json | jq -r '.db_cluster_password | .value')
+        sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-selfhosted.yaml
         sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-production.yaml
   - deploy:
       name: Install component
@@ -72,6 +74,7 @@ steps:
         --namespace codacy-<<parameters.environment>> \
         -f values.yaml \
         -f values-production.yaml \
+        -f values-selfhosted.yaml \
         --version $version \
         --set global.imagePullSecrets[0].name=docker-credentials \
         --set global.play.cryptoSecret=$SHARED_PLAY_CRYPTO_SECRET \
