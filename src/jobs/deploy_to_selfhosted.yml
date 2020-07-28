@@ -42,6 +42,7 @@ steps:
       name: Fetch values files
       command: |
         curl -s -o values.yaml "https://raw.githubusercontent.com/codacy/chart/<<parameters.git_tag>>/codacy/values.yaml"
+        curl -s -o values-selfhosted.yaml "https://raw.githubusercontent.com/codacy/chart/<<parameters.git_tag>>/.do/values.yaml"
         curl -s -o values-production.yaml "https://raw.githubusercontent.com/codacy/chart/<<parameters.git_tag>>/codacy/values-production.yaml"
   - run:
       name: Prepare terraform files
@@ -70,6 +71,7 @@ steps:
         --atomic \
         --timeout=600s \
         --namespace codacy-<<parameters.environment>> \
+        -f values-selfhosted.yaml \
         -f values.yaml \
         -f values-production.yaml \
         --version $version \
