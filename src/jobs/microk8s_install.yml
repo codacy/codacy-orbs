@@ -240,3 +240,10 @@ steps:
                 echo "Could not verify that the analysis ran"
                 (exit 1)
               fi
+  - run:
+      name: Get log dump on fail
+      when: on_fail
+      command: |
+        sudo bash <(curl -fsSL https://raw.githubusercontent.com/codacy/chart/master/docs/troubleshoot/extract-codacy-logs.sh) -n codacy
+  - store_artifacts:
+      path: "*.tar.gz"
