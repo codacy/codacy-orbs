@@ -224,7 +224,7 @@ steps:
                 echo $OUT;
                 echo -e "$(( COUNT++ ))... \c";
                 printf "\n\n ## WORKER LOGS ## \n\n"
-                sudo microk8s.kubectl logs -l app=worker -c worker --namespace << parameters.namespace >> || true
+                sudo microk8s.kubectl logs -l app=worker -c worker --namespace << parameters.namespace >> --tail=1000 || true
                 sleep 10;
               done
               if [[ $COUNT -eq $ATTEMPTS ]]; then
@@ -240,10 +240,5 @@ steps:
                 echo "Could not verify that the analysis ran"
                 (exit 1)
               fi
-  - run:
-      name: Get log dump on fail
-      when: on_fail
-      command: |
-        sudo bash <(curl -fsSL https://raw.githubusercontent.com/codacy/chart/master/docs/troubleshoot/extract-codacy-logs.sh) -n codacy
   - store_artifacts:
       path: "*.tar.gz"
