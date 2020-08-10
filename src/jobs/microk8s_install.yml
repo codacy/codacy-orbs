@@ -240,5 +240,3 @@ steps:
                 echo "Could not verify that the analysis ran"
                 (exit 1)
               fi
-  - store_artifacts:
-      path: "*.tar.gz"
