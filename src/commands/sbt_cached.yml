@@ -21,6 +21,10 @@ parameters:
     description: "The path to search for test results to upload to CircleCI"
     type: string
     default: ""
+  no_output_timeout:
+    description: "The time to wait for the command without output"
+    type: string
+    default: "10m"
 
 steps:
 
@@ -49,6 +53,7 @@ steps:
               fi
         - run:
             name: << parameters.cmd_name >>
+            no_output_timeout:  << parameters.no_output_timeout >>
             command: << parameters.cmd >>
 
   - unless:
@@ -69,6 +74,7 @@ steps:
               fi
         - run:
             name: SBT command - << parameters.cmd >>
+            no_output_timeout:  << parameters.no_output_timeout >>
             command: << parameters.cmd >>
 
   - when:
