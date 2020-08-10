@@ -40,6 +40,11 @@ parameters:
     description: "Version of SBT to install. If empty, the system one will be used"
     type: string
     default: ""
+  no_output_timeout:
+    description: "The time to wait for the command without output"
+    type: string
+    default: "10m"
+
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
   AWS_DEFAULT_REGION: << parameters.region >>
@@ -83,6 +88,7 @@ steps:
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
             store_test_results_path: ~/workdir
+            no_output_timeout:  << parameters.no_output_timeout >>
 
   - unless:
       condition: << parameters.store_test_results >>
@@ -90,6 +96,7 @@ steps:
         - sbt_cached:
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
+            no_output_timeout:  << parameters.no_output_timeout >>
 
   - when:
       condition: << parameters.persist_to_workspace >>
