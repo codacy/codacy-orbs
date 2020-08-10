@@ -224,7 +224,7 @@ steps:
                 echo $OUT;
                 echo -e "$(( COUNT++ ))... \c";
                 printf "\n\n ## WORKER LOGS ## \n\n"
-                sudo microk8s.kubectl logs -l app=worker -c worker --namespace << parameters.namespace >> || true
+                sudo microk8s.kubectl logs -l app=worker -c worker --namespace << parameters.namespace >> --tail=1000 || true
                 sleep 10;
               done
               if [[ $COUNT -eq $ATTEMPTS ]]; then
