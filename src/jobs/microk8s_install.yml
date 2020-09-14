@@ -220,7 +220,7 @@ steps:
               ATTEMPTS=120
               OUT="not found"
               until $( [[ $OUT == *'"Analysed"'* ]]  || [[ $COUNT -eq $ATTEMPTS ]]); do
-                OUT=$(curl  -H "Content-Type: application/json" -H "api-token:fWz6plit8jzFDLylH0tx"  http://localhost:9000/2.0/jaime_1/codacytest/commit/f0c9fc5255350d4bfa2f52bfceed6465603a84f1 );
+                OUT=$(curl  -H "Content-Type: application/json" -H "api-token:fWz6plit8jzFDLylH0tx"  http://localhost:9000/2.0/reliability/codacytest/commit/f0c9fc5255350d4bfa2f52bfceed6465603a84f1 );
                 echo $OUT;
                 echo -e "$(( COUNT++ ))... \c";
                 printf "\n\n ## WORKER LOGS ## \n\n"
