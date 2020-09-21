@@ -72,7 +72,6 @@ steps:
         --atomic \
         --timeout=600s \
         --namespace codacy-<<parameters.environment>> \
-        -f values-selfhosted.yaml \
         -f values.yaml \
         -f values-production.yaml \
         -f values-selfhosted.yaml \
@@ -96,4 +95,7 @@ steps:
         --set global.crow.config.passwordAuth.password=$CROW_PASSWORD \
         --set ingress.hostname.api=$hostname \
         --set ingress.hostname.app=$hostname \
+        --set ingress.tls.hosts[0]=$hostname \
+        --set ingress.tls.hosts[1]=$hostname \
+        --set ingress.tls.secretName=codacy-<<parameters.environment>>-ingress-tls-secret \
         <<parameters.helm_install_extra_flags>>
