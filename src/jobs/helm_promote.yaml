@@ -45,5 +45,5 @@ steps:
       name: Push to charts museum
       command: |
         export TMP_DIR_PATH=$(mktemp -d)
-        helm fetch -d ${TMP_DIR_PATH} --repo << parameters.source_charts_repo_url >> << parameters.chart_name >> --version << parameters.source_version >>
+        helm pull -d ${TMP_DIR_PATH} --repo << parameters.source_charts_repo_url >> << parameters.chart_name >> --version << parameters.source_version >>
         helm push ${TMP_DIR_PATH}/*.tgz << parameters.target_charts_repo_url >> -u "<< parameters.target_charts_repo_user >>" -p "<< parameters.target_charts_repo_pass >>" -v  "<< parameters.target_version >>"
