@@ -88,7 +88,7 @@ steps:
         --set global.metrics.grafana.enabled=true \
         --set global.listener.nfsserverprovisioner.storageClass.name="codacy-<<parameters.environment>>-listener-cache-class" \
         --set global.features.cloneSubmodules=true \
-        --set global.worker-manager.config.codacy.worker.image=dev \
+        --set global.workerManager.workers.config.imageVersion=dev \
         --set global.crow.config.passwordAuth.username=$CROW_USERNAME \
         --set global.crow.config.passwordAuth.password=$CROW_PASSWORD \
         <<parameters.helm_install_extra_flags>>
