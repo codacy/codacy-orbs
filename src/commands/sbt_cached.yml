@@ -16,7 +16,7 @@ parameters:
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
-    default: sbt-cache-032020
+    default: sbt-cache-102020
   store_test_results_path:
     description: "The path to search for test results to upload to CircleCI"
     type: string
@@ -39,43 +39,23 @@ steps:
       condition: <<parameters.cmd_name>>
       steps:
         - run:
-            name: Unpacking Caches
-            command: |
-              if [[ -f "$HOME/targets.tar.gz" ]]; then
-                echo "cache found"
-                if [[ -d "target" ]]; then
-                  echo "local workspace exists, skipping"
-                else
-                  echo "unpacking cache" && tar -xf ~/targets.tar.gz
-                fi
-              else
-                echo "no cache found"
-              fi
-        - run:
             name: << parameters.cmd_name >>
             no_output_timeout:  << parameters.no_output_timeout >>
-            command: << parameters.cmd >>
+            command: |
+              # Workaround for this Sbt issue in CircleCI
+              # https://github.com/sbt/sbt/issues/4168
+              SBT_OPTS="$SBT_OPTS -Dsbt.io.jdktimestamps=true" << parameters.cmd >>
 
   - unless:
       condition: <<parameters.cmd_name>>
       steps:
         - run:
-            name: Unpacking Caches
-            command: |
-              if [[ -f "$HOME/targets.tar.gz" ]]; then
-                echo "cache found"
-                if [[ -d "target" ]]; then
-                  echo "local workspace exists, skipping"
-                else
-                  echo "unpacking cache" && tar -xf ~/targets.tar.gz
-                fi
-              else
-                echo "no cache found"
-              fi
-        - run:
             name: SBT command - << parameters.cmd >>
             no_output_timeout:  << parameters.no_output_timeout >>
-            command: << parameters.cmd >>
+            command: |
+              # Workaround for this Sbt issue in CircleCI
+              # https://github.com/sbt/sbt/issues/4168
+              SBT_OPTS="$SBT_OPTS -Dsbt.io.jdktimestamps=true" << parameters.cmd >>
 
   - when:
       condition: << parameters.store_test_results_path >>
@@ -92,9 +72,6 @@ steps:
               set +eo pipefail
               find $HOME/.sbt -name "*.lock" | xargs rm | true
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
-              # Workaround for this Sbt issue in CircleCI
-              # https://github.com/sbt/sbt/issues/4168
-              find -name target -type d -exec tar -zcf ~/targets.tar.gz -H posix {} + | true
 
         - save_cache:
             key: << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -103,4 +80,13 @@ steps:
               - "~/.sbt"
               - "~/.m2"
               - "~/.cache"
-              - "~/targets.tar.gz"
+              - 'target'
+              - '*/target'
+              - '*/*/target'
+              - '*/*/*/target'
+              - '*/*/*/*/target'
+              - '*/*/*/*/*/*/target'
+              - '*/*/*/*/*/*/*/target'
+              - '*/*/*/*/*/*/*/*/target'
+              - '*/*/*/*/*/*/*/*/*/target'
+              - '*/*/*/*/*/*/*/*/*/*/target'
