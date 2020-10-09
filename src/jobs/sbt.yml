@@ -9,7 +9,7 @@ parameters:
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
-    default: sbt-cache-032020
+    default: sbt-cache-102020
   aws_profile:
     description: "The AWS profile to be used"
     type: string
@@ -72,15 +72,6 @@ steps:
       name: Set OpenJdk
       command: sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
 
-  - run:
-      name: Uncompress local targets
-      command: |
-        if [[ -f "targets.tar.gz" ]]; then
-          echo "unpacking persisted workspace" && tar -xf targets.tar.gz
-        else
-          echo "no persisted workspace found"
-        fi
-
   - when:
       condition: << parameters.store_test_results >>
       steps:
@@ -101,13 +92,7 @@ steps:
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:
-        - run:
-            name: Compressing targets
-            command: |
-              find -name target -type d -exec tar -zcf targets.tar.gz -H posix {} + | true
-              find -name target -type d -exec rm -rf {} + | true
         - persist_to_workspace:
             root: ~/workdir
             paths:
               - '*'
-              - targets.tar.gz
