@@ -31,24 +31,11 @@ steps:
       command: |
         curl -fsSL "https://dl.bintray.com/codacy/pulse/event-cli/<< parameters.pulse_event_cli_version >>/pulse-event-cli_linux_amd64/pulse-event-cli" -o event-cli
         chmod +x event-cli
+
         previous_deployment=$(git describe --exclude "*-*" --abbrev=0 --tags `git log HEAD^1 --format=%H --max-count=1`)
-        deployment_changes=()
-        mapfile -t deployment_changes < <( git log --format="%H" ${previous_deployment}...HEAD )
-        if [ ${#deployment_changes[@]} -gt 0 ]
-        then
-          ./event-cli push deployment \
-              --api-key "<< parameters.pulse_ingestion_api_key >>" \
-              --identifier $(cat .version) \
-              --timestamp $(date +%s) \
-              ${deployment_changes[@]}
 
-          for deployment_change in "${deployment_changes[@]}"
-          do
-            deployment_change_date=$(git log --format="%at" ${deployment_change} --max-count=1)
-
-            ./event-cli push change \
-                --api-key "<< parameters.pulse_ingestion_api_key >>" \
-                --identifier "${deployment_change}" \
-                --timestamp "${deployment_change_date}"
-          done
-        fi
+        ./event-cli push git deployment \
+            --previous-deployment-ref "${previous_deployment}" \
+            --api-key "<< parameters.pulse_ingestion_api_key >>" \
+            --identifier "$(cat .version)"\
+            --timestamp "$(date +%s)"
