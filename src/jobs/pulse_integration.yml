@@ -1,0 +1,41 @@
+description: |
+  Send deployment and changes data to Pulse
+
+  This integration will work for all repositories that use tag-based deployments and that
+  distinguish between non-production and production tags by using an hyphen (Codacy's use case). E.g:
+
+  - `1.2.3` - production tag
+  - `1.2.3-RC1` - non-production tag
+  - `1.2.3.rc1` - production tag
+  - `production` - production tag
+  - `non-production` - non-production tag
+
+  This step should run at the end of the CI pipeline, after a production deployment has occured and
+  was sucessful.
+
+parameters:
+  pulse_ingestion_api_key:
+    type: string
+    description: The API key for Pulse authentication
+  pulse_event_cli_version:
+    type: string
+    description: The version of Pulse's event CLI to be used
+
+executor: machine
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+  - run:
+      name: Send deployment and changes data to Pulse
+      command: |
+        curl -fsSL "https://dl.bintray.com/codacy/pulse/event-cli/<< parameters.pulse_event_cli_version >>/pulse-event-cli_linux_amd64/pulse-event-cli" -o event-cli
+        chmod +x event-cli
+
+        previous_deployment=$(git describe --exclude "*-*" --abbrev=0 --tags `git log HEAD^1 --format=%H --max-count=1`)
+
+        ./event-cli push git deployment \
+            --previous-deployment-ref "${previous_deployment}" \
+            --api-key "<< parameters.pulse_ingestion_api_key >>" \
+            --identifier "$(cat .version)"\
+            --timestamp "$(date +%s)"
