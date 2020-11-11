@@ -37,5 +37,5 @@ steps:
         ./event-cli push git deployment \
             --previous-deployment-ref "${previous_deployment}" \
             --api-key "<< parameters.pulse_ingestion_api_key >>" \
-            --identifier "$(cat .version)"\
+            --identifier "$(cat .version)" \
             --timestamp "$(date +%s)"
