@@ -244,8 +244,8 @@ steps:
               sleep 20
               COUNT=0
               ATTEMPTS=120
-              OUT='"complete":false'
-              SUCCESS='{"data":[{"action":"clone","complete":true},{"action":"createTasks","complete":true},{"action":"runMetrics","complete":true},{"action":"runPatterns","complete":false},{"action":"createOverviews","complete":true}]}'
+              OUT=''
+              SUCCESS='{"data":[{"action":"clone","complete":true},{"action":"createTasks","complete":true},{"action":"runMetrics","complete":true},{"action":"runPatterns","complete":true},{"action":"createOverviews","complete":true}]}'
               until $([[ $OUT == $SUCCESS ]]  || [[ $COUNT -eq $ATTEMPTS ]]); do
                 OUT=$(curl -X GET http://localhost:9000/api/v3/analysis/organizations/gh/codacycircleci/repositories/microk8s-test/analysis-progress -H 'Accept: application/json' -H 'api-token:fWz6plit8jzFDLylH0tx');
                 echo $OUT;
