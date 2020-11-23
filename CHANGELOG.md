@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.0
+
+You need to update Sbt `1.x` at least to sbt `1.4.1`.
+Sbt `0.13.x` is not affected by this change.
+
 ## 2.0.0
 
 Changed persist and attach of workspace to use the root of the `working_directory`.

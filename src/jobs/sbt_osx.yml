@@ -53,14 +53,6 @@ steps:
         cat >> ~/.aws/credentials \<< EOF
         << parameters.credentials_file_content >>
         EOF
-  - run:
-      name: Uncompress local targets
-      command: |
-        if [[ -f "targets.tar.gz" ]]; then
-          echo "unpacking persisted workspace" && tar -xf targets.tar.gz
-        else
-          echo "no persisted workspace found"
-        fi
   - sbt_cached:
       cmd: << parameters.cmd >>
       cache_prefix: << parameters.cache_prefix >>
