@@ -203,32 +203,32 @@ steps:
 
               echo "Creating an API token for user with id=1"
               sudo microk8s.kubectl exec -it codacy-postgres-0 \
-              -n codacy -- psql "postgresql://codacy:codacy@localhost/accounts" \
+              -n << parameters.namespace >> -- psql "postgresql://codacy:codacy@localhost/accounts" \
               -c "INSERT INTO \"UniqueName\" (\"name\") VALUES ('codacycircleci'); INSERT INTO \"Account\" (\"isAdmin\", \"isActive\", \"mainEmail\", \"uniqueNameId\") VALUES (TRUE,TRUE,'circleci@codacy.com', 10) ; INSERT INTO \"ApiTokens\" (\"accountId\",\"clientId\",\"secretId\") VALUES  ('10','fc15acbf7b5aab4afe19c588c2ce1e1cc86742a0c08ed7fb540190019059eb0d','cef5fa6242d5c519e59836ee1b7f3afe93864d082ec0b9aaa822072c668a5bff3dab8829bf48159718252e725549701a514896b0efe09136b2f9b3a0ac1721db');"
 
               echo "Setup a user plan for the user"
               sudo microk8s.kubectl exec -it codacy-postgres-0 \
-              -n codacy -- psql "postgresql://codacy:codacy@localhost/accounts" \
+              -n << parameters.namespace >> -- psql "postgresql://codacy:codacy@localhost/accounts" \
               -c "INSERT INTO \"UserPaymentPlan\" (\"planId\", \"users\", \"value\") VALUES (1, 1, 0) RETURNING id;"
 
               echo "Add user to organization"
               sudo microk8s.kubectl exec -it codacy-postgres-0 \
-              -n codacy -- psql "postgresql://codacy:codacy@localhost/accounts" \
+              -n << parameters.namespace >> -- psql "postgresql://codacy:codacy@localhost/accounts" \
               -c "INSERT INTO \"Teams_Organization\"(\"subscriptionId\", \"billingEmail\", \"sync\", \"provider\", \"remoteName\", \"remoteIdentifier\", \"isSingleAccount\") VALUES (1, 'circleci@codacy.com', 'Auto', 'gh', 'codacycircleci', 42476340, true) RETURNING id; INSERT INTO \"Teams_OrganizationMember\" (\"organizationId\", \"userId\", \"permission\" ) VALUES (1, 10, 'AdminLevel') RETURNING id;"
 
 
               echo "Setup user token"
               sudo microk8s.kubectl exec -it codacy-postgres-0 \
-              -n codacy -- psql "postgresql://codacy:codacy@localhost/accounts" \
+              -n << parameters.namespace >> -- psql "postgresql://codacy:codacy@localhost/accounts" \
               -c "INSERT INTO \"AccountTokens\"(\"userId\", \"provider\", \"token\", \"timestamp\", \"scopes\", \"refreshToken\", \"expiryDate\") VALUES (10, 'GithubReadOnly', 'f6cb5fd18b2d1815e667e73fecdc8ccd14588f76b1ecc7854f292085c84ff15819fe15f0009bea0d1d7793263ee639e7', '$(date)', null, null, null) RETURNING id;"
 
               sudo microk8s.kubectl exec -it codacy-postgres-0 \
-              -n codacy -- psql "postgresql://codacy:codacy@localhost/accounts" \
+              -n << parameters.namespace >> -- psql "postgresql://codacy:codacy@localhost/accounts" \
               -c "INSERT INTO \"account_github\"(\"user_id\", \"github_id\") VALUES (10, 42476340) RETURNING id;"
 
 
               echo "Port forward codacy-api"
-              sudo microk8s.kubectl port-forward deployment/codacy-api -n codacy 9000 --pod-running-timeout=5m0s &
+              sudo microk8s.kubectl port-forward deployment/codacy-api -n << parameters.namespace >> 9000 --pod-running-timeout=5m0s &
               sleep 5
 
               echo "Add a project to user with id=1 using the token"
@@ -250,7 +250,7 @@ steps:
                 echo $OUT;
                 echo -e "$(( COUNT++ ))... \c";
                 printf "\n\n ## WORKER LOGS ## \n\n"
-                sudo microk8s.kubectl logs -l app=worker -c worker --namespace codacy --tail=1000 || true
+                sudo microk8s.kubectl logs -l app=worker -c worker --namespace << parameters.namespace >> --tail=1000 || true
                 sleep 10;
               done
               if [[ $COUNT -eq $ATTEMPTS ]]; then
