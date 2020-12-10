@@ -1,6 +1,6 @@
 description: "A default sbt job"
 
-executor: machine
+executor: << parameters.executor >>
 
 parameters:
   cmd:
@@ -44,6 +44,11 @@ parameters:
     description: "The time to wait for the command without output"
     type: string
     default: "10m"
+  executor:
+    description: "The executor used to run the commands"
+    type: enum
+    enum: ["machine", "jdk"]
+    default: "machine"
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
