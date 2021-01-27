@@ -92,6 +92,7 @@ steps:
               set +eo pipefail
               find $HOME/.sbt -name "*.lock" | xargs rm | true
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
+              find $HOME/.ivy2 -type l | xargs rm | true
               # Workaround for this Sbt issue in CircleCI
               # https://github.com/sbt/sbt/issues/4168
               find -name target -type d -exec tar -zcf ~/targets.tar.gz -H posix {} + | true
