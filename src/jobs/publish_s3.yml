@@ -1,0 +1,38 @@
+description: Publish files to public S3
+
+executor: aws
+
+parameters:
+  path:
+    type: string
+    description: Path to store the files in S3
+  files:
+    type: string
+    description: Files to publish separated by space
+  version:
+    type: string
+    description: Version to publish to
+    default: "$(cat .version)"
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+
+  - run_aws:
+      cmd_name: Send files to S3
+      cmd: |
+        export AWS_PROFILE=production
+
+        BUCKET=$(aws ssm get-parameter --name "/codacy/artifacts/public/bucket" --query Parameter.Value --output text)
+        CLOUDFRONT_ID=$(aws ssm get-parameter --name "/codacy/artifacts/public/cloudfront_id" --query Parameter.Value --output text)
+
+        for FILE in << parameters.files >> ; do
+          FILENAME=$(basename $FILE)
+          aws s3 cp ${FILE} s3://${BUCKET}/<< parameters.path >>/<< parameters.version >>/${FILENAME}
+        done
+
+        # if it is a stable version then publish to latest file with current version and invalidate cloudfront cache
+        if $(echo << parameters.version >> | grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$'); then
+          echo << parameters.version >> | tr -d '\n' | aws s3 cp - s3://${BUCKET}/<< parameters.path >>/latest
+          aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_ID} --paths "/<< parameters.path >>/latest"
+        fi
