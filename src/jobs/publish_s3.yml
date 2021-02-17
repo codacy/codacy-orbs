@@ -1,0 +1,27 @@
+description: Publish files to S3
+
+executor: aws
+
+parameters:
+  public:
+    type: boolean
+    description: Files accessible publicly
+  path:
+    type: string
+    description: Path to store the files in S3
+  files:
+    type: string
+    description: Comma separated list of files to publish
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+
+  - run_aws:
+      cmd_name: Send files to S3
+      cmd: |
+        IFS=","
+        for file in << parameters.files >>
+        do
+          aws s3 cp $file $AWS_PUBLIC_ARTIFACT_BUCKET/<< parameters.path >>/$(cat .version)/$file --acl public-read
+        done
