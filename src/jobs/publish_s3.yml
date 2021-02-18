@@ -21,6 +21,8 @@ steps:
   - run_aws:
       cmd_name: Send files to S3
       cmd: |
+        set -v
+        set -x
 
         export AWS_PROFILE=production
 
