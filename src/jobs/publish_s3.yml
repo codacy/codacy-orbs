@@ -1,11 +1,8 @@
-description: Publish files to S3
+description: Publish files to public S3
 
 executor: aws
 
 parameters:
-  public:
-    type: boolean
-    description: Whether to store in the public bucket
   path:
     type: string
     description: Path to store the files in S3
@@ -24,16 +21,19 @@ steps:
   - run_aws:
       cmd_name: Send files to S3
       cmd: |
-        if [[ << parameters.public >> ]]; then
-          bucket=$AWS_PUBLIC_ARTIFACTS_BUCKET
-        else
-          bucket=$AWS_PRIVATE_ARTIFACTS_BUCKET
-        fi
 
-        for file in << parameters.files >> ; do
-          filename=$(basename $file)
-          AWS_PROFILE=production aws s3 cp $file $bucket/<< parameters.path >>/<< parameters.version >>/$filename
+        export AWS_PROFILE=production
+
+        BUCKET=$(aws ssm get-parameter --name "/codacy/artifacts/public/bucket" --query Parameter.Value --output text)
+        CLOUDFRONT_ID=$(aws ssm get-parameter --name "/codacy/artifacts/public/cloudfront_id" --query Parameter.Value --output text)
+
+        for FILE in << parameters.files >> ; do
+          FILENAME=$(basename $FILE)
+          aws s3 cp ${FILE} ${BUCKET}/<< parameters.path >>/<< parameters.version >>/${FILENAME}
         done
-        if $(echo << parameters.version >> | grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$' .version); then
-          echo << parameters.version >> | tr -d '\n' | AWS_PROFILE=production aws s3 cp - $bucket/<< parameters.path >>/latest
+
+        # if it is a stable version then publish to latest file with current version and invalidate cloudfront cache
+        if $(echo << parameters.version >> | grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$'); then
+          echo << parameters.version >> | tr -d '\n' | aws s3 cp - ${BUCKET}/<< parameters.path >>/latest
+          aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_ID} --paths "/<< parameters.path >>/latest"
         fi
