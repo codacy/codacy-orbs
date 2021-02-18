@@ -5,13 +5,13 @@ executor: aws
 parameters:
   public:
     type: boolean
-    description: Files accessible publicly
+    description: Whether to store in the public bucket
   path:
     type: string
     description: Path to store the files in S3
   files:
     type: string
-    description: Comma separated list of files to publish
+    description: Files to publish separated by space
 
 steps:
   - attach_workspace:
