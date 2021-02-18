@@ -26,6 +26,9 @@ steps:
           do
             AWS_PROFILE=integration aws s3 cp $file $AWS_PUBLIC_ARTIFACTS_BUCKET/<< parameters.path >>/$(cat .version)/${file##*/} --acl public-read
           done
+          if $(grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$' .version); then
+            cat .version |  tr -d '\n' | AWS_PROFILE=integration aws s3 cp $AWS_PUBLIC_ARTIFACTS_BUCKET/<< parameters.path >>/latest --acl public-read
+          fi
         else
           echo "Private publishing not supported yet."
           exit 1
