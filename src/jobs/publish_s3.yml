@@ -21,9 +21,6 @@ steps:
   - run_aws:
       cmd_name: Send files to S3
       cmd: |
-        set -v
-        set -x
-
         export AWS_PROFILE=production
 
         BUCKET=$(aws ssm get-parameter --name "/codacy/artifacts/public/bucket" --query Parameter.Value --output text)
@@ -31,11 +28,11 @@ steps:
 
         for FILE in << parameters.files >> ; do
           FILENAME=$(basename $FILE)
-          aws s3 cp ${FILE} ${BUCKET}/<< parameters.path >>/<< parameters.version >>/${FILENAME}
+          aws s3 cp ${FILE} s3://${BUCKET}/<< parameters.path >>/<< parameters.version >>/${FILENAME}
         done
 
         # if it is a stable version then publish to latest file with current version and invalidate cloudfront cache
         if $(echo << parameters.version >> | grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$'); then
-          echo << parameters.version >> | tr -d '\n' | aws s3 cp - ${BUCKET}/<< parameters.path >>/latest
+          echo << parameters.version >> | tr -d '\n' | aws s3 cp - s3://${BUCKET}/<< parameters.path >>/latest
           aws cloudfront create-invalidation --distribution-id ${CLOUDFRONT_ID} --paths "/<< parameters.path >>/latest"
         fi
