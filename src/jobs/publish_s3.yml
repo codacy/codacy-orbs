@@ -21,13 +21,12 @@ steps:
       cmd_name: Send files to S3
       cmd: |
         if [[ << parameters.public >> ]]; then
-          IFS=","
-          for file in << parameters.files >>
-          do
-            AWS_PROFILE=integration aws s3 cp $file $AWS_PUBLIC_ARTIFACTS_BUCKET/<< parameters.path >>/$(cat .version)/${file##*/} --acl public-read
+          for file in << parameters.files >> ; do
+            filename=$(basename $file)
+            AWS_PROFILE=integration aws s3 cp $file $AWS_PUBLIC_ARTIFACTS_BUCKET/<< parameters.path >>/$(cat .version)/$filename
           done
           if $(grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$' .version); then
-            cat .version |  tr -d '\n' | AWS_PROFILE=integration aws s3 cp $AWS_PUBLIC_ARTIFACTS_BUCKET/<< parameters.path >>/latest --acl public-read
+            cat .version | tr -d '\n' | AWS_PROFILE=integration aws s3 cp $AWS_PUBLIC_ARTIFACTS_BUCKET/<< parameters.path >>/latest
           fi
         else
           echo "Private publishing not supported yet."
