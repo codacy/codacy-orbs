@@ -12,6 +12,10 @@ parameters:
   files:
     type: string
     description: Files to publish separated by space
+  version:
+    type: string
+    description: Version to publish to
+    default: "$(cat .version)"
 
 steps:
   - attach_workspace:
@@ -28,8 +32,8 @@ steps:
 
         for file in << parameters.files >> ; do
           filename=$(basename $file)
-          AWS_PROFILE=production aws s3 cp $file $bucket/<< parameters.path >>/$(cat .version)/$filename
+          AWS_PROFILE=production aws s3 cp $file $bucket/<< parameters.path >>/<< parameters.version >>/$filename
         done
-        if $(grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$' .version); then
+        if $(echo << parameters.version >> | grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$' .version); then
           cat .version | tr -d '\n' | AWS_PROFILE=production aws s3 cp - $bucket/<< parameters.path >>/latest
         fi
