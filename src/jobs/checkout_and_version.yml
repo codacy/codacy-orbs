@@ -33,7 +33,7 @@ steps:
 
   - run:
       name: Set version
-      command: /bin/git-version --dev-branch "<<parameters.dev_branch>>" --release-branch "<<parameters.release_branch>>" --version-prefix "<<parameters.version_prefix>>" > .version
+      command: echo '1.0.0' > .version
 
   - run:
       name: Current version
