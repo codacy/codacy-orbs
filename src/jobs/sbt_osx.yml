@@ -45,7 +45,10 @@ steps:
       at: ~/workdir
   - run:
       name: Download and install sbt
-      command: brew install sbt
+      command: |
+        git -C /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core fetch --unshallow
+        git -C /usr/local/Homebrew/Library/Taps/homebrew/homebrew-cask fetch --unshallow
+        brew install sbt
   - run:
       name: Setup AWS Credentials
       command: |
