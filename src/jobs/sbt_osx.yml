@@ -45,6 +45,8 @@ steps:
       at: ~/workdir
   - run:
       name: Download and install sbt
+      environment:
+        HOMEBREW_NO_AUTO_UPDATE: 1
       command: brew install sbt
   - run:
       name: Setup AWS Credentials
