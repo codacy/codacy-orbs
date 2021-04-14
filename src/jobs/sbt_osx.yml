@@ -45,7 +45,9 @@ steps:
       at: ~/workdir
   - run:
       name: Download and install sbt
-      command: brew install sbt
+      command: |
+        brew install openjdk@15
+        brew install sbt@1
   - run:
       name: Setup AWS Credentials
       command: |
