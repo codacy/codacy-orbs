@@ -47,7 +47,11 @@ steps:
       name: Download and install sbt
       environment:
         HOMEBREW_NO_AUTO_UPDATE: 1
-      command: brew install sbt
+      command: |
+        # Call brew update explicitly until Circle CI update their images,
+        # see https://github.com/Homebrew/brew/issues/11123
+        brew update
+        brew install sbt
   - run:
       name: Setup AWS Credentials
       command: |
