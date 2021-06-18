@@ -30,13 +30,13 @@ parameters:
     type: string
     default: "latest"
   tag_dev:
-    description: If 'true' tag image with the dev_tag
-    type: string
-    default: "true"
+    description: If true tag image with the dev_tag
+    type: boolean
+    default: true
   tag_release:
-    description: If 'true' tag image with the release_tag
-    type: string
-    default: "true"
+    description: If true tag image with the release_tag
+    type: boolean
+    default: true
   push_to_dockerhub:
     description: If true then publish to dockerhub
     type: boolean
@@ -103,10 +103,10 @@ steps:
         docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
         docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:$(cat .version)"
 
-        if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ] && [ "<< parameters.tag_release >>" == 'true']; then
+        if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ] && << parameters.tag_release >> ; then
           docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
           docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
-        elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ] && [ "<< parameters.tag_dev >>" == 'true']; then
+        elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ] && << parameters.tag_dev >> ; then
           docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
           docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
         fi
