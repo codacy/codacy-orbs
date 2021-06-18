@@ -61,6 +61,12 @@ parameters:
     description: "The prefix of cache to be used"
     type: string
     default: sbt-cache-032020
+  test_1:
+    type: boolean
+    default: false
+  test_2:
+    type: boolean
+    default: false
 
 executor: aws
 
@@ -96,7 +102,25 @@ steps:
   - run:
       name: Load docker image
       command: docker load --input "<< parameters.path >>"
-
+  - run:
+      name: Test boolean parameters
+      command: |
+        if [ "true" == "true" ] && << parameters.test_1 >> ; then
+          echo "#### Test1: true (and regular test)"
+        fi
+        if [ "true" == "true" ] && << parameters.test_2 >> ; then
+          echo "#### Test2: true (and regular test)"
+        fi
+        if << parameters.test_1 >> ; then
+          echo "#### Test1: true"
+        fi
+        if << parameters.test_2 >> ; then
+          echo "#### Test2: true"
+        fi
+        if << parameters.test_1 >> && << parameters.test_2 >> ; then
+          echo "#### Test1: true"
+          echo "#### Test2: true"
+        fi
   - run:
       name: Tagging image
       command: |
