@@ -65,8 +65,8 @@ steps:
         docker push --all-tags "codacy/<< parameters.docker_name >>"
   - when:
       condition: << parameters.ecr_publish >>
-        steps:
-          - run_aws:
+      steps:
+        - run_aws:
             cmd_name: Publish to ECR
             deploy: true
             cmd: |
