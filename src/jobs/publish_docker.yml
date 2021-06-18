@@ -4,7 +4,7 @@ parameters:
   path:
     description: Path to the docker tar
     type: string
-    default: docker-image.tar
+    default: target/docker-image.tar
   docker_name:
     description: Name of the image stored in the archive
     type: string
@@ -89,13 +89,14 @@ steps:
         - run:
             name: Unpacking Caches
             command: |
-              if [[ -f "$HOME/targets.tar.gz" ]]; then
-                echo "cache found"
-                if [[ -d "target" ]]; then
-                  echo "local workspace exists, skipping"
-                else
-                  echo "unpacking cache" && tar -xf ~/targets.tar.gz
-                fi
+              if [[ -d "target" ]]; then
+                echo "local workspace exists, skipping"
+              elif [[ -f "$HOME/targets.tar.gz" ]] ; then
+                echo "found cache at $HOME"
+                echo "unpacking cache" && tar -xf ~/targets.tar.gz
+              elif [[ -f ./targets.tar.gz" ]] ; then
+                echo "found cache at ."
+                echo "unpacking cache" && tar -xf ./targets.tar.gz
               else
                 echo "no cache found"
               fi
