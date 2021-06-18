@@ -1,4 +1,4 @@
-description: Publish to Docker hub
+description: Publish to Docker hub and ECR
 
 parameters:
   path:
@@ -29,6 +29,10 @@ parameters:
     description: Overrides the default release branch docker tag (latest).
     type: string
     default: "latest"
+  dockerhub_publish:
+    description: If true than publish to dockerhub
+    type: boolean
+    default: true
   ecr_publish:
     description: If true than publish to ECR
     type: boolean
@@ -51,18 +55,21 @@ environment:
 steps:
   - attach_workspace:
       at: ~/workdir
-  - run:
-      name: Publish to Docker
-      command: |
-        docker load --input "<< parameters.path >>"
-        docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-        docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
-        if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]; then
-          docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
-        elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]; then
-          docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
-        fi
-        docker push --all-tags "codacy/<< parameters.docker_name >>"
+  - when:
+      condition: << parameters.dockerhub_publish >>
+      steps:
+        - run:
+            name: Publish to Dockerhub
+            command: |
+              docker load --input "<< parameters.path >>"
+              docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+              docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
+              if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]; then
+                docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
+              elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]; then
+                docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
+              fi
+              docker push --all-tags "codacy/<< parameters.docker_name >>"
   - when:
       condition: << parameters.ecr_publish >>
       steps:
