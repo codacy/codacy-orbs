@@ -29,22 +29,38 @@ parameters:
     description: Overrides the default release branch docker tag (latest).
     type: string
     default: "latest"
-  dockerhub_publish:
-    description: If true than publish to dockerhub
+  tag_dev:
+    description: If 'true' tag image with the dev_tag
+    type: string
+    default: "true"
+  tag_release:
+    description: If 'true' tag image with the release_tag
+    type: string
+    default: "true"
+  push_to_dockerhub:
+    description: If true then publish to dockerhub
     type: boolean
-    default: true
-  ecr_publish:
-    description: If true than publish to ECR
+    default: false
+  push_to_ecr:
+    description: If true then publish to ECR
     type: boolean
-    default: true
+    default: false
   aws_profile:
-    description: "The AWS profile to be used"
+    description: The AWS profile to be used
     type: string
     default: "default"
   region:
-    description: "The AWS region for the deployment"
+    description: The AWS region for the deployment
     type: string
     default: eu-west-1
+  restore_cache:
+    description: If true then restore cache
+    type: boolean
+    default: false
+  cache_prefix:
+    description: "The prefix of cache to be used"
+    type: string
+    default: sbt-cache-032020
 
 executor: aws
 
@@ -56,38 +72,67 @@ steps:
   - attach_workspace:
       at: ~/workdir
   - when:
-      condition: << parameters.dockerhub_publish >>
+      condition: <<parameters.restore_cache >>
+      steps:
+        - restore_cache:
+            keys:
+              - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
+              - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}
+              - << parameters.cache_prefix >>-{{ .Branch }}
+              - << parameters.cache_prefix >>
+        - run:
+            name: Unpacking Caches
+            command: |
+              if [[ -f "$HOME/targets.tar.gz" ]]; then
+                echo "cache found"
+                if [[ -d "target" ]]; then
+                  echo "local workspace exists, skipping"
+                else
+                  echo "unpacking cache" && tar -xf ~/targets.tar.gz
+                fi
+              else
+                echo "no cache found"
+              fi
+  - run:
+      name: Load docker image
+      command: docker load --input "<< parameters.path >>"
+
+  - run:
+      name: Tagging image
+      command: |
+        docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
+        docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:$(cat .version)"
+
+        if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ] && [ "<< parameters.tag_release >>" == 'true']; then
+          docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
+          docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
+        elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ] && [ "<< parameters.tag_dev >>" == 'true']; then
+          docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
+          docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
+        fi
+
+  - when:
+      condition: << parameters.push_to_dockerhub >>
       steps:
         - run:
-            name: Publish to Dockerhub
+            name: Login to Dockerhub
             command: |
-              docker load --input "<< parameters.path >>"
               docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-              docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
-              if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]; then
-                docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
-              elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]; then
-                docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
-              fi
-              docker push --all-tags "codacy/<< parameters.docker_name >>"
+        - deploy:
+            name: Pushing image to Dockerhub
+            command: docker push --all-tags "codacy/<< parameters.docker_name >>"
   - when:
-      condition: << parameters.ecr_publish >>
+      condition: << parameters.push_to_ecr >>
       steps:
         - run_aws:
-            cmd_name: Publish to ECR
-            deploy: true
+            cmd_name: Log in to ECR
+            deploy: false
             cmd: |
-              docker load --input "<< parameters.path >>"
-
               ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
               ECR_ADDRESS=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
-
               aws ecr get-login-password --region << parameters.region >> | docker login --username AWS --password-stdin ${ECR_ADDRESS}
+        - run_aws:
+            cmd_name: Pushing image to ECR
+            deploy: true
+            cmd: docker push --all-tags "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>"
 
-              docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:$(cat .version)"
-              if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]; then
-                docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
-              elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]; then
-                docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
-              fi
-              docker push --all-tags "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>"
