@@ -1,7 +1,5 @@
 description: Publish to Docker hub
 
-executor: machine
-
 parameters:
   path:
     description: Path to the docker tar
@@ -31,6 +29,24 @@ parameters:
     description: Overrides the default release branch docker tag (latest).
     type: string
     default: "latest"
+  ecr_publish:
+    description: If true than publish to ECR
+    type: boolean
+    default: true
+  aws_profile:
+    description: "The AWS profile to be used"
+    type: string
+    default: "default"
+  region:
+    description: "The AWS region for the deployment"
+    type: string
+    default: eu-west-1
+
+executor: aws
+
+environment:
+  AWS_PROFILE: << parameters.aws_profile >>
+  AWS_DEFAULT_REGION: << parameters.region >>
 
 steps:
   - attach_workspace:
@@ -46,4 +62,25 @@ steps:
         elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]; then
           docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
         fi
-        docker push "codacy/<< parameters.docker_name >>"
+        docker push --all-tags "codacy/<< parameters.docker_name >>"
+  - when:
+      condition: << parameters.ecr_publish >>
+        steps:
+          - run_aws:
+            cmd_name: Publish to ECR
+            deploy: true
+            cmd: |
+              docker load --input "<< parameters.path >>"
+
+              ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+              ECR_ADDRESS=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
+
+              aws ecr get-login-password --region << parameters.region >> | docker login --username AWS --password-stdin ${ECR_ADDRESS}
+
+              docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:$(cat .version)"
+              if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]; then
+                docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
+              elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]; then
+                docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
+              fi
+              docker push --all-tags "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>"
