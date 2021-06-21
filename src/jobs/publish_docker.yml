@@ -92,7 +92,8 @@ steps:
         if << parameters.ecr_login >> ; then
           export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           export ECR_URL=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
+          export ECR_PASSWORD=$(aws ecr get-login-password --region << parameters.region >>)
           echo "Login to ECR: ${ECR_URL}"
-          aws ecr get-login-password --region << parameters.region >> | docker login --username AWS --password-stdin ${ECR_URL}
+          docker login -u AWS -p ${ECR_PASSWORD} ${ECR_URL}
         fi
         << parameters.cmd >>
