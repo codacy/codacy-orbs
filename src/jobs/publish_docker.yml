@@ -107,7 +107,7 @@ steps:
   - deploy:
       name: Running docker command
       command: |
-        if << parameter.login_to_ecr >> ; then
+        if << parameters.enable_ecr >> ; then
           export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           export ECR_ADDRESS=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
           echo "Login to ECR: ${ECR_ADDRESS}"
