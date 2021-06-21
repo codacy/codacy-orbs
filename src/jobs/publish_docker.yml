@@ -29,12 +29,8 @@ parameters:
     description: Overrides the default release branch docker tag (latest).
     type: string
     default: "latest"
-  push_to_dockerhub:
-    description: If true then publish to dockerhub. All codacy/`docker_name` tags will be pushed.
-    type: boolean
-    default: true
-  push_to_ecr:
-    description: If true then publish to ECR. All $ECR_ADDRESS/codacy/`docker_name` tags will be pushed.
+  enable_ecr:
+    description: If true then login to ECR and set the ECR_ADDRESS environment variable to the ECR repo base address
     type: boolean
     default: false
   aws_profile:
@@ -57,16 +53,18 @@ parameters:
     description: If true then unpack targets tarball
     type: boolean
     default: false
-  tag_cmd:
-    description: Command to run to tag the image. The '${ECR_ADDRESS}' holds the ECR repository base url.
+  docker_cmds:
+    description: Docker commands to run to tag and push the image. Login is handled automatically by the command
     type: string
     default: |
+      docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
       docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
       if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ] ; then
         docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
       elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ] ; then
         docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
       fi
+      docker push "codacy/<< parameters.docker_name >>"
 
 executor: machine
 
@@ -106,38 +104,13 @@ steps:
   - run:
       name: Load docker image
       command: docker load --input "<< parameters.path >>"
-  - when:
-      condition: << parameters.push_to_dockerhub >>
-      steps:
-        - run:
-            name: Login to Dockerhub
-            command: |
-              docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-        - run:
-            name: Tagging image
-            command: |
-              << parameters.tag_cmd >>
-        - deploy:
-            name: Pushing image to Dockerhub
-            command: docker push --all-tags "codacy/<< parameters.docker_name >>"
-  - when:
-      condition: << parameters.push_to_ecr >>
-      steps:
-        - run_aws:
-            cmd_name: Log in to ECR
-            deploy: false
-            cmd: |
-              ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-              ECR_ADDRESS=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
-              aws ecr get-login-password --region << parameters.region >> | docker login --username AWS --password-stdin ${ECR_ADDRESS}
-        - run:
-            name: Tagging image
-            command: |
-              ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-              ECR_ADDRESS=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
-              << parameters.tag_cmd >>
-        - run_aws:
-            cmd_name: Pushing image to ECR
-            deploy: true
-            cmd: docker push --all-tags "${ECR_ADDRESS}/codacy/<< parameters.docker_name >>"
-
+  - deploy:
+      name: Running docker command
+      command: |
+        if << parameter.login_to_ecr >> ; then
+          export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          export ECR_ADDRESS=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
+          echo "Login to ECR: ${ECR_ADDRESS}"
+          aws ecr get-login-password --region << parameters.region >> | docker login --username AWS --password-stdin ${ECR_ADDRESS}
+        fi
+        << parameters.docker_cmds >>
