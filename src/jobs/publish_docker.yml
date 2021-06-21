@@ -1,4 +1,4 @@
-description: Publish to Docker hub and ECR
+description: Publish to Docker hub and/or ECR
 
 parameters:
   path:
@@ -61,6 +61,10 @@ parameters:
     description: "The prefix of cache to be used"
     type: string
     default: sbt-cache-032020
+  unpack_targets:
+    description: If true then unpack targets tarball
+    type: boolean
+    default: false
   test_1:
     type: boolean
     default: false
@@ -68,7 +72,7 @@ parameters:
     type: boolean
     default: false
 
-executor: aws
+executor: machine
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -86,10 +90,13 @@ steps:
               - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}
               - << parameters.cache_prefix >>-{{ .Branch }}
               - << parameters.cache_prefix >>
+  - when:
+      condition: <<parameters.unpack_targets >>
+      steps:
         - run:
-            name: Unpacking Caches
+            name: Unpacking Targets
             command: |
-              if [[ -d "target" ]]; then
+              if [[ -d "target" ]] ; then
                 echo "local workspace exists, skipping"
               elif [[ -f "$HOME/targets.tar.gz" ]] ; then
                 echo "found cache at $HOME"
@@ -100,9 +107,6 @@ steps:
               else
                 echo "no cache found"
               fi
-  - run:
-      name: Load docker image
-      command: docker load --input "<< parameters.path >>"
   - run:
       name: Test boolean parameters
       command: |
@@ -122,6 +126,9 @@ steps:
           echo "#### Test1: true"
           echo "#### Test2: true"
         fi
+  - run:
+      name: Load docker image
+      command: docker load --input "<< parameters.path >>"
   - run:
       name: Tagging image
       command: |
