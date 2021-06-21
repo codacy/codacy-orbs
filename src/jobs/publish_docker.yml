@@ -94,7 +94,7 @@ steps:
               elif [[ -f "$HOME/targets.tar.gz" ]] ; then
                 echo "found cache at $HOME"
                 echo "unpacking cache" && tar -xf ~/targets.tar.gz
-              elif [[ -f ./targets.tar.gz" ]] ; then
+              elif [[ -f "./targets.tar.gz" ]] ; then
                 echo "found cache at ."
                 echo "unpacking cache" && tar -xf ./targets.tar.gz
               else
