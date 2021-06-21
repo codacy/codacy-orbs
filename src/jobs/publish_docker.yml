@@ -53,10 +53,11 @@ parameters:
     description: If true then unpack targets tarball
     type: boolean
     default: false
-  docker_cmds:
-    description: Docker commands to run to tag and push the image. Login is handled automatically by the command
+  cmd:
+    description: Docker commands to tag and push the image. By default tag with version and push to dockerhub.
     type: string
     default: |
+      docker load --input "<< parameters.path >>"
       docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
       docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
       if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ] ; then
@@ -101,9 +102,6 @@ steps:
               else
                 echo "no cache found"
               fi
-  - run:
-      name: Load docker image
-      command: docker load --input "<< parameters.path >>"
   - deploy:
       name: Running docker command
       command: |
@@ -113,4 +111,4 @@ steps:
           echo "Login to ECR: ${ECR_ADDRESS}"
           aws ecr get-login-password --region << parameters.region >> | docker login --username AWS --password-stdin ${ECR_ADDRESS}
         fi
-        << parameters.docker_cmds >>
+        << parameters.cmd >>
