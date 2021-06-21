@@ -41,14 +41,6 @@ parameters:
     description: The AWS region for the deployment
     type: string
     default: eu-west-1
-  restore_cache:
-    description: If true then restore cache
-    type: boolean
-    default: false
-  cache_prefix:
-    description: "The prefix of cache to be used"
-    type: string
-    default: sbt-cache-032020
   unpack_targets:
     description: If true then unpack targets tarball
     type: boolean
@@ -77,15 +69,6 @@ steps:
   - attach_workspace:
       at: ~/workdir
   - when:
-      condition: <<parameters.restore_cache >>
-      steps:
-        - restore_cache:
-            keys:
-              - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
-              - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}
-              - << parameters.cache_prefix >>-{{ .Branch }}
-              - << parameters.cache_prefix >>
-  - when:
       condition: <<parameters.unpack_targets >>
       steps:
         - run:
@@ -102,9 +85,10 @@ steps:
               else
                 echo "no cache found"
               fi
-  - deploy:
-      name: Running docker command
-      command: |
+  - run_aws:
+      cmd_name: Running docker command
+      deploy: true
+      cmd: |
         if << parameters.ecr_login >> ; then
           export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           export ECR_URL=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
