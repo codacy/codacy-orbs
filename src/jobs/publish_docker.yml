@@ -29,8 +29,8 @@ parameters:
     description: Overrides the default release branch docker tag (latest).
     type: string
     default: "latest"
-  enable_ecr:
-    description: If true then login to ECR and set the ECR_ADDRESS environment variable to the ECR repo base address
+  ecr_login:
+    description: If true then login to ECR and set the ECR_URL environment variable to the ECR repo base URL
     type: boolean
     default: false
   aws_profile:
@@ -105,10 +105,10 @@ steps:
   - deploy:
       name: Running docker command
       command: |
-        if << parameters.enable_ecr >> ; then
+        if << parameters.ecr_login >> ; then
           export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
-          export ECR_ADDRESS=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
-          echo "Login to ECR: ${ECR_ADDRESS}"
-          aws ecr get-login-password --region << parameters.region >> | docker login --username AWS --password-stdin ${ECR_ADDRESS}
+          export ECR_URL=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
+          echo "Login to ECR: ${ECR_URL}"
+          aws ecr get-login-password --region << parameters.region >> | docker login --username AWS --password-stdin ${ECR_URL}
         fi
         << parameters.cmd >>
