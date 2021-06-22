@@ -1,6 +1,4 @@
-description: Publish to Docker hub
-
-executor: machine
+description: Publish to Docker hub and/or ECR
 
 parameters:
   path:
@@ -31,19 +29,71 @@ parameters:
     description: Overrides the default release branch docker tag (latest).
     type: string
     default: "latest"
+  ecr_login:
+    description: If true then login to ECR and set the ECR_URL environment variable to the ECR repo base URL
+    type: boolean
+    default: false
+  aws_profile:
+    description: The AWS profile to be used
+    type: string
+    default: "default"
+  region:
+    description: The AWS region for the deployment
+    type: string
+    default: eu-west-1
+  unpack_targets:
+    description: If true then unpack targets tarball
+    type: boolean
+    default: false
+  cmd:
+    description: Docker commands to tag and push the image. By default tag with version and push to dockerhub.
+    type: string
+    default: |
+      docker load --input "<< parameters.path >>"
+      docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+      docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
+      if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ] ; then
+        docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
+      elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ] ; then
+        docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
+      fi
+      docker push "codacy/<< parameters.docker_name >>"
+
+executor: machine
+
+environment:
+  AWS_PROFILE: << parameters.aws_profile >>
+  AWS_DEFAULT_REGION: << parameters.region >>
 
 steps:
   - attach_workspace:
       at: ~/workdir
-  - run:
-      name: Publish to Docker
-      command: |
-        docker load --input "<< parameters.path >>"
-        docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-        docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
-        if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]; then
-          docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
-        elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]; then
-          docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
+  - when:
+      condition: <<parameters.unpack_targets >>
+      steps:
+        - run:
+            name: Unpacking Targets
+            command: |
+              if [[ -d "target" ]] ; then
+                echo "local workspace exists, skipping"
+              elif [[ -f "$HOME/targets.tar.gz" ]] ; then
+                echo "found cache at $HOME"
+                echo "unpacking cache" && tar -xf ~/targets.tar.gz
+              elif [[ -f "./targets.tar.gz" ]] ; then
+                echo "found cache at ."
+                echo "unpacking cache" && tar -xf ./targets.tar.gz
+              else
+                echo "no cache found"
+              fi
+  - run_aws:
+      cmd_name: Running docker command
+      deploy: true
+      cmd: |
+        if << parameters.ecr_login >> ; then
+          export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          export ECR_URL=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
+          export ECR_PASSWORD=$(aws ecr get-login-password --region << parameters.region >>)
+          echo "Login to ECR: ${ECR_URL}"
+          docker login -u AWS -p ${ECR_PASSWORD} ${ECR_URL}
         fi
-        docker push "codacy/<< parameters.docker_name >>"
+        << parameters.cmd >>
