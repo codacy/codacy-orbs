@@ -58,7 +58,7 @@ steps:
         - run:
             name: Download and install sbt << parameters.install_sbt_version >>
             command: |
-              wget https://dl.bintray.com/sbt/debian/sbt-<< parameters.install_sbt_version >>.deb
+              wget https://repo.scala-sbt.org/scalasbt/debian/sbt-<< parameters.install_sbt_version >>.deb
               sudo dpkg -i sbt-<< parameters.install_sbt_version >>.deb
               rm -f sbt-<< parameters.install_sbt_version >>.deb
   - run:
