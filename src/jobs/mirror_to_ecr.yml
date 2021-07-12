@@ -8,11 +8,11 @@ parameters:
     description: Tag of the source docker image
     type: string
   mirror_name:
-    description: Name of the mirror docker image in ECR
+    description: Name of the mirror docker image in ECR. If empty then the source_name is used.
     type: string
     default: ""
   mirror_tag:
-    description: Tag of the mirror docker image in ECR
+    description: Tag of the mirror docker image in ECR. If empty then the source_tag is used.
     type: string
     default: ""
   aws_profile:
@@ -37,10 +37,13 @@ steps:
       cmd_name: Running docker command
       deploy: true
       cmd: |
+        echo "Loging in to Dockerhub..."
+        docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+
         export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
         export ECR_URL=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
         export ECR_PASSWORD=$(aws ecr get-login-password --region << parameters.region >>)
-        echo "Login to ECR: ${ECR_URL}"
+        echo "Loging in to ECR: ${ECR_URL}"
         docker login -u AWS -p ${ECR_PASSWORD} ${ECR_URL}
 
         SRC_NAME="<< parameters.source_name >>"
