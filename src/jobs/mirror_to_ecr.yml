@@ -15,6 +15,10 @@ parameters:
     description: Tag of the mirror docker image in ECR. If empty then the source_tag is used.
     type: string
     default: ""
+  force:
+    description: If true then force mirroring the image even if it already exists in ECR
+    type: boolean
+    default: false
   aws_profile:
     description: The AWS profile to be used
     type: string
@@ -51,19 +55,19 @@ steps:
         SRC="${SRC_NAME}:${SRC_TAG}"
 
         MIRROR_NAME="<< parameters.mirror_name >>"
-        if [ -z ${MIRROR_NAME} ] ; then
+        if [[ -z ${MIRROR_NAME} ]] ; then
           MIRROR_NAME="${SRC_NAME}"
         fi
 
         MIRROR_TAG="<< parameters.mirror_tag >>"
-        if [ -z ${MIRROR_TAG} ] ; then
+        if [[ -z ${MIRROR_TAG} ]] ; then
           MIRROR_TAG="${SRC_TAG}"
         fi
         MIRROR="${MIRROR_NAME}:${MIRROR_TAG}"
 
         echo "Mirroring ${SRC} to ${ECR_URL}/${MIRROR}..."
         REPO_DATA=$(aws ecr describe-images --repository-name=${MIRROR_NAME} --image-ids=imageTag=${MIRROR_TAG} ||: )
-        if [[ -z $REPO_DATA ]] ; then
+        if << parameters.force>> || [[ -z $REPO_DATA ]] ; then
           docker pull ${SRC}
           docker tag  ${SRC} ${ECR_URL}/${MIRROR}
           docker push ${ECR_URL}/${MIRROR}
