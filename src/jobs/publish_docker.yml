@@ -46,18 +46,9 @@ parameters:
     type: boolean
     default: false
   cmd:
-    description: Docker commands to tag and push the image. By default tag with version and push to dockerhub.
+    description: Docker commands to tag and push the image. If empty then the default commands, which tag with version and push to dockerhub, will be used.
     type: string
-    default: |
-      docker load --input "<< parameters.path >>"
-      docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
-      docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
-      if [ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ] ; then
-        docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
-      elif [ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ] ; then
-        docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
-      fi
-      docker push "codacy/<< parameters.docker_name >>"
+    default: ""
 
 executor: machine
 
@@ -69,7 +60,7 @@ steps:
   - attach_workspace:
       at: ~/workdir
   - when:
-      condition: <<parameters.unpack_targets >>
+      condition: << parameters.unpack_targets >>
       steps:
         - run:
             name: Unpacking Targets
@@ -90,10 +81,26 @@ steps:
       deploy: true
       cmd: |
         if << parameters.ecr_login >> ; then
+          echo "Logging in to ECR..."
           export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
           export ECR_URL=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
           export ECR_PASSWORD=$(aws ecr get-login-password --region << parameters.region >>)
           echo "Login to ECR: ${ECR_URL}"
           docker login -u AWS -p ${ECR_PASSWORD} ${ECR_URL}
         fi
-        << parameters.cmd >>
+
+        if [[ -z '<< parameters.cmd >>' ]] ; then
+          echo "Running default commands..."
+          docker load --input "<< parameters.path >>"
+          docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+          docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
+          if [[ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]] ; then
+            docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
+          elif [[ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]] ; then
+            docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
+          fi
+          docker push "codacy/<< parameters.docker_name >>"
+        else
+          echo "Running custom commands..."
+          << parameters.cmd >>
+        fi
