@@ -19,6 +19,10 @@ parameters:
     description: If true then force mirroring the image even if it already exists in ECR
     type: boolean
     default: false
+  tag_as_latest:
+    description: If true then also tag mirror image as latest
+    type: boolean
+    default: false
   aws_profile:
     description: The AWS profile to be used
     type: string
@@ -71,6 +75,10 @@ steps:
           docker pull ${SRC}
           docker tag  ${SRC} ${ECR_URL}/${MIRROR}
           docker push ${ECR_URL}/${MIRROR}
+          if << parameters.tag_as_latest >> ; then
+            docker tag  ${SRC} ${ECR_URL}/${MIRROR_NAME}:latest
+            docker push ${ECR_URL}/${MIRROR_NAME}:latest
+          fi
         else
           echo "${MIRROR} image is already in ECR"
         fi
