@@ -23,6 +23,10 @@ parameters:
     description: If true then also tag mirror image as latest
     type: boolean
     default: false
+  latest_tag:
+    description: Roling tag to use for latest (generally just latest, the default)
+    type: string
+    default: latest
   aws_profile:
     description: The AWS profile to be used
     type: string
@@ -76,8 +80,8 @@ steps:
           docker tag  ${SRC} ${ECR_URL}/${MIRROR}
           docker push ${ECR_URL}/${MIRROR}
           if << parameters.tag_as_latest >> ; then
-            docker tag  ${SRC} ${ECR_URL}/${MIRROR_NAME}:latest
-            docker push ${ECR_URL}/${MIRROR_NAME}:latest
+            docker tag  ${SRC} ${ECR_URL}/${MIRROR_NAME}:<< parameters.latest_tag >>
+            docker push ${ECR_URL}/${MIRROR_NAME}:<< parameters.latest_tag >>
           fi
         else
           echo "${MIRROR} image is already in ECR"
