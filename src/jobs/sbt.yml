@@ -40,6 +40,10 @@ parameters:
     description: "Version of SBT to install. If empty, the system one will be used"
     type: string
     default: ""
+  install_ammonite_version:
+    description: "Version of Ammonite to install (e.g. '2.4.0/2.13-2.4.0'). If empty then no version will be installed"
+    type: string
+    default: ""
   no_output_timeout:
     description: "The time to wait for the command without output"
     type: string
@@ -61,6 +65,16 @@ steps:
               wget https://repo.scala-sbt.org/scalasbt/debian/sbt-<< parameters.install_sbt_version >>.deb
               sudo dpkg -i sbt-<< parameters.install_sbt_version >>.deb
               rm -f sbt-<< parameters.install_sbt_version >>.deb
+  - when:
+      condition: << parameters.install_ammonite_version >>
+      steps:
+        - run:
+            name: Download and install Ammonite << parameters.install_ammonite_version >>
+            command: |
+              echo '#!/usr/bin/env sh' > amm
+              curl -L https://github.com/com-lihaoyi/Ammonite/releases/download/<< parameters.install_ammonite_version >> >> amm
+              chmod +x amm
+              sudo mv amm /usr/local/bin/amm
   - run:
       name: Setup AWS Credentials
       command: |
