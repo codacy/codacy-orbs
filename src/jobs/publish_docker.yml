@@ -80,6 +80,7 @@ steps:
       cmd_name: Running docker command
       deploy: true
       cmd: |
+        set +eo pipefail
         if << parameters.ecr_login >> ; then
           echo "Logging in to ECR..."
           export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
