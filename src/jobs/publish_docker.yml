@@ -100,7 +100,7 @@ steps:
           elif [[ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]] ; then
             docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.dev_tag >>"
           fi
-          docker push "codacy/<< parameters.docker_name >>"
+          docker push --all-tags "codacy/<< parameters.docker_name >>"
         else
           echo "Running custom commands..."
           << parameters.cmd >>
