@@ -36,10 +36,6 @@ parameters:
     description: "Whether to upload the test results back to CircleCI"
     type: boolean
     default: false
-  install_sbt_version:
-    description: "Version of SBT to install. If empty, the system one will be used"
-    type: string
-    default: ""
   no_output_timeout:
     description: "The time to wait for the command without output"
     type: string
@@ -52,15 +48,13 @@ environment:
 steps:
   - attach_workspace:
       at: ~/workdir
-  - when:
-      condition: << parameters.install_sbt_version >>
-      steps:
-        - run:
-            name: Download and install sbt << parameters.install_sbt_version >>
-            command: |
-              wget https://repo.scala-sbt.org/scalasbt/debian/sbt-<< parameters.install_sbt_version >>.deb
-              sudo dpkg -i sbt-<< parameters.install_sbt_version >>.deb
-              rm -f sbt-<< parameters.install_sbt_version >>.deb
+  - run:
+      name: Download and install sbt
+      command: |
+        sbt_version=$(cat project/build.properties | grep sbt.version | sed "s/ *sbt\.version *= *//")
+        wget https://repo.scala-sbt.org/scalasbt/debian/sbt-$sbt_version.deb
+        sudo dpkg -i sbt-$sbt_version.deb
+        rm -f sbt-$sbt_version.deb
   - run:
       name: Setup AWS Credentials
       command: |
@@ -71,15 +65,6 @@ steps:
   - run:
       name: Set OpenJdk
       command: sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
-
-  - run:
-      name: Uncompress local targets
-      command: |
-        if [[ -f "targets.tar.gz" ]]; then
-          echo "unpacking persisted workspace" && tar -xf targets.tar.gz
-        else
-          echo "no persisted workspace found"
-        fi
 
   - when:
       condition: << parameters.store_test_results >>
@@ -97,17 +82,3 @@ steps:
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
             no_output_timeout:  << parameters.no_output_timeout >>
-
-  - when:
-      condition: << parameters.persist_to_workspace >>
-      steps:
-        - run:
-            name: Compressing targets
-            command: |
-              find -name target -type d -exec tar -zcf targets.tar.gz -H posix {} + | true
-              find -name target -type d -exec rm -rf {} + | true
-        - persist_to_workspace:
-            root: ~/workdir
-            paths:
-              - '*'
-              - targets.tar.gz

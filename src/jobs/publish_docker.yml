@@ -41,10 +41,6 @@ parameters:
     description: The AWS region for the deployment
     type: string
     default: eu-west-1
-  unpack_targets:
-    description: If true then unpack targets tarball
-    type: boolean
-    default: false
   cmd:
     description: Docker commands to tag and push the image. If empty then the default commands, which tag with version and push to dockerhub, will be used.
     type: string
@@ -59,23 +55,6 @@ environment:
 steps:
   - attach_workspace:
       at: ~/workdir
-  - when:
-      condition: << parameters.unpack_targets >>
-      steps:
-        - run:
-            name: Unpacking Targets
-            command: |
-              if [[ -d "target" ]] ; then
-                echo "local workspace exists, skipping"
-              elif [[ -f "$HOME/targets.tar.gz" ]] ; then
-                echo "found cache at $HOME"
-                echo "unpacking cache" && tar -xf ~/targets.tar.gz
-              elif [[ -f "./targets.tar.gz" ]] ; then
-                echo "found cache at ."
-                echo "unpacking cache" && tar -xf ./targets.tar.gz
-              else
-                echo "no cache found"
-              fi
   - run_aws:
       cmd_name: Running docker command
       deploy: true
