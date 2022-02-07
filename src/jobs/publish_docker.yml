@@ -87,13 +87,13 @@ steps:
           export ECR_URL=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
           export ECR_PASSWORD=$(aws ecr get-login-password --region << parameters.region >>)
           echo "Login to ECR: ${ECR_URL}"
-          docker login -u AWS -p ${ECR_PASSWORD} ${ECR_URL}
+          echo ${ECR_PASSWORD} | docker login -u AWS --password-stdin ${ECR_URL}
         fi
 
         if [[ -z '<< parameters.cmd >>' ]] ; then
           echo "Running default commands..."
           docker load --input "<< parameters.path >>"
-          docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+          echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
           docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
           if [[ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]] ; then
             docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"

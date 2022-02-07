@@ -42,13 +42,13 @@ steps:
       deploy: true
       cmd: |
         echo "Loging in to Dockerhub..."
-        docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+        echo $DOCKER_PASS | docker login -u "$DOCKER_USER" --password-stdin
 
         export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
         export ECR_URL=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
         export ECR_PASSWORD=$(aws ecr get-login-password --region << parameters.region >>)
         echo "Loging in to ECR: ${ECR_URL}"
-        docker login -u AWS -p ${ECR_PASSWORD} ${ECR_URL}
+        echo ${ECR_PASSWORD} | docker login -u AWS --password-stdin ${ECR_URL}
 
         SRC_NAME="<< parameters.source_name >>"
         SRC_TAG="<< parameters.source_tag >>"
