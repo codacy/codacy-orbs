@@ -95,6 +95,11 @@ steps:
           docker load --input "<< parameters.path >>"
           echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
           docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$(cat .version)"
+          # if it is a stable version then publish the major tag as well
+          if $(cat .version | grep -q -E '^[0-9]+\.[0-9]+\.[0-9]+$'); then
+            major=$(cat .version | awk -F. '{print $1}')
+            docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:$major"
+          fi
           if [[ "${CIRCLE_BRANCH}" == "<< parameters.release_branch >>" ]] ; then
             docker tag "<< parameters.docker_name >>:<< parameters.docker_tag >>" "codacy/<< parameters.docker_name >>:<< parameters.release_tag >>"
           elif [[ "${CIRCLE_BRANCH}" == "<< parameters.dev_branch >>" ]] ; then
