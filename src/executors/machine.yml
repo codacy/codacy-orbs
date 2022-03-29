@@ -3,6 +3,6 @@ description: >
   https://circleci.com/docs/2.0/executor-types/#using-machine
 
 machine:
-  image: ubuntu-2004:202107-02
+  image: ubuntu-2004:202111-02
 
 working_directory: ~/workdir
