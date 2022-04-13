@@ -40,7 +40,7 @@ steps:
         - << parameters.cache_prefix >>-{{ .Branch }}
         - << parameters.cache_prefix >>
   - when:
-      condition: <<parameters.my_steps>> !== []
+      condition: <<parameters.my_steps>>
       steps:
         - run:
             name: Unpacking Caches
