@@ -92,6 +92,25 @@ steps:
         fi
 
   - when:
+      condition: << parameters.use_sbt_native_client >>
+      steps:
+        - run:
+            name: Start sbt server
+            command: sbt
+            background: true
+        - run:
+            name: Wait for sbt server to start
+            command: |
+              #!/bin/bash
+
+              while ! ls .bsp/sbt.json 2> /dev/null ;
+              do
+                  sleep 1
+                  echo "Waiting for Sbt to start..."
+              done
+
+              echo "Sbt is ready"
+  - when:
       condition: << parameters.store_test_results >>
       steps:
         - sbt_cached:
