@@ -49,6 +49,9 @@ parameters:
     description: "The time to wait for the command without output"
     type: string
     default: "10m"
+  sbt_native_client:
+    type: env_var_name
+    default: SBT_NATIVE_CLIENT
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
