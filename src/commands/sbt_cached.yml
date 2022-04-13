@@ -9,6 +9,11 @@ parameters:
   cmd:
     description: "SBT command to run"
     type: string
+    default: ""
+  steps:
+    description: "SBT steps to run"
+    type: steps
+    default: []
   save_cache:
     description: "Save the cache after the command is executed"
     type: boolean
@@ -34,9 +39,26 @@ steps:
         - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}
         - << parameters.cache_prefix >>-{{ .Branch }}
         - << parameters.cache_prefix >>
+  - when:
+      condition: <<parameters.steps>> !== []
+      steps:
+        - run:
+            name: Unpacking Caches
+            command: |
+              if [[ -f "$HOME/targets.tar.gz" ]]; then
+                echo "cache found"
+                if [[ -d "target" ]]; then
+                  echo "local workspace exists, skipping"
+                else
+                  echo "unpacking cache" && tar -xf ~/targets.tar.gz
+                fi
+              else
+                echo "no cache found"
+              fi
+        - <<parameters.steps>>
 
   - when:
-      condition: <<parameters.cmd_name>>
+      condition: <<parameters.cmd>> && <<parameters.cmd_name>>
       steps:
         - run:
             name: Unpacking Caches
@@ -57,7 +79,7 @@ steps:
             command: << parameters.cmd >>
 
   - unless:
-      condition: <<parameters.cmd_name>>
+      condition: (! <<parameters.cmd>>) && <<parameters.cmd_name>>
       steps:
         - run:
             name: Unpacking Caches
