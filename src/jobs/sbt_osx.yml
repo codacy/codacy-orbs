@@ -68,6 +68,7 @@ steps:
           echo "no persisted workspace found"
         fi
   - sbt_cached:
+      steps: << parameters.steps >>
       cmd: << parameters.cmd >>
       cache_prefix: << parameters.cache_prefix >>
   - when:
