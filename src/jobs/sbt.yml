@@ -49,13 +49,15 @@ parameters:
     description: "The time to wait for the command without output"
     type: string
     default: "10m"
-  sbt_native_client:
-    type: env_var_name
-    default: SBT_NATIVE_CLIENT
+  use_sbt_native_client:
+    description: "Use the Sbt thin client"
+    type: boolean
+    default: false
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
   AWS_DEFAULT_REGION: << parameters.region >>
+  SBT_NATIVE_CLIENT: << parameters.use_sbt_native_client >>
 
 steps:
   - attach_workspace:
