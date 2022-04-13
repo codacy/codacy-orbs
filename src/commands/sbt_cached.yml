@@ -10,7 +10,7 @@ parameters:
     description: "SBT command to run"
     type: string
     default: ""
-  steps:
+  my_steps:
     description: "SBT steps to run"
     type: steps
     default: []
@@ -40,7 +40,7 @@ steps:
         - << parameters.cache_prefix >>-{{ .Branch }}
         - << parameters.cache_prefix >>
   - when:
-      condition: <<parameters.steps>> !== []
+      condition: <<parameters.my_steps>> !== []
       steps:
         - run:
             name: Unpacking Caches
@@ -55,7 +55,7 @@ steps:
               else
                 echo "no cache found"
               fi
-        - <<parameters.steps>>
+        - <<parameters.my_steps>>
 
   - when:
       condition: <<parameters.cmd>> && <<parameters.cmd_name>>
