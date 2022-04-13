@@ -9,6 +9,11 @@ parameters:
   cmd:
     description: "SBT command to run"
     type: string
+    default: ""
+  steps:
+    description: "SBT steps to run"
+    type: steps
+    default: []
   save_cache:
     description: "Save the cache after the command is executed"
     type: boolean
@@ -35,43 +40,39 @@ steps:
         - << parameters.cache_prefix >>-{{ .Branch }}
         - << parameters.cache_prefix >>
 
+  - run:
+      name: Unpacking Caches
+      command: |
+        if [[ -f "$HOME/targets.tar.gz" ]]; then
+          echo "cache found"
+          if [[ -d "target" ]]; then
+            echo "local workspace exists, skipping"
+          else
+            echo "unpacking cache" && tar -xf ~/targets.tar.gz
+          fi
+        else
+          echo "no cache found"
+        fi
   - when:
-      condition: <<parameters.cmd_name>>
+      condition: <<parameters.steps>>
       steps:
-        - run:
-            name: Unpacking Caches
-            command: |
-              if [[ -f "$HOME/targets.tar.gz" ]]; then
-                echo "cache found"
-                if [[ -d "target" ]]; then
-                  echo "local workspace exists, skipping"
-                else
-                  echo "unpacking cache" && tar -xf ~/targets.tar.gz
-                fi
-              else
-                echo "no cache found"
-              fi
+        - <<parameters.steps>>
+  - when:
+      condition:
+        and:
+          - <<parameters.cmd>>
+          - <<parameters.cmd_name>>
+      steps:
         - run:
             name: << parameters.cmd_name >>
             no_output_timeout:  << parameters.no_output_timeout >>
             command: << parameters.cmd >>
-
-  - unless:
-      condition: <<parameters.cmd_name>>
+  - when:
+      condition:
+        and:
+          - <<parameters.cmd>>
+          - not: <<parameters.cmd_name>>
       steps:
-        - run:
-            name: Unpacking Caches
-            command: |
-              if [[ -f "$HOME/targets.tar.gz" ]]; then
-                echo "cache found"
-                if [[ -d "target" ]]; then
-                  echo "local workspace exists, skipping"
-                else
-                  echo "unpacking cache" && tar -xf ~/targets.tar.gz
-                fi
-              else
-                echo "no cache found"
-              fi
         - run:
             name: SBT command - << parameters.cmd >>
             no_output_timeout:  << parameters.no_output_timeout >>
