@@ -3,9 +3,14 @@ description: "A default sbt job"
 executor: osx
 
 parameters:
+  steps:
+    description: "Steps to run"
+    type: steps
+    default: []
   cmd:
     description: "SBT command to run"
     type: string
+    default: ""
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
@@ -68,6 +73,7 @@ steps:
           echo "no persisted workspace found"
         fi
   - sbt_cached:
+      steps: << parameters.steps >>
       cmd: << parameters.cmd >>
       cache_prefix: << parameters.cache_prefix >>
   - when:

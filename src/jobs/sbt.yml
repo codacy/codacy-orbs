@@ -3,9 +3,14 @@ description: "A default sbt job"
 executor: machine
 
 parameters:
+  steps:
+    description: "Steps to run"
+    type: steps
+    default: []
   cmd:
     description: "SBT command to run"
     type: string
+    default: ""
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
@@ -44,10 +49,15 @@ parameters:
     description: "The time to wait for the command without output"
     type: string
     default: "10m"
+  use_sbt_native_client:
+    description: "Use the sbt thin client"
+    type: boolean
+    default: false
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
   AWS_DEFAULT_REGION: << parameters.region >>
+  SBT_NATIVE_CLIENT: << parameters.use_sbt_native_client >>
 
 steps:
   - attach_workspace:
@@ -82,9 +92,29 @@ steps:
         fi
 
   - when:
+      condition: << parameters.use_sbt_native_client >>
+      steps:
+        - run:
+            name: Background sbt server
+            command: SBT_NATIVE_CLIENT=false sbt
+            background: true
+        - run:
+            name: Wait for sbt server to start
+            command: |
+              #!/bin/bash
+
+              while ! ls .bsp/sbt.json 2> /dev/null ;
+              do
+                  sleep 1
+                  echo "Waiting for sbt to start..."
+              done
+
+              echo "sbt is ready"
+  - when:
       condition: << parameters.store_test_results >>
       steps:
         - sbt_cached:
+            steps: << parameters.steps >>
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
             store_test_results_path: ~/workdir
@@ -94,6 +124,7 @@ steps:
       condition: << parameters.store_test_results >>
       steps:
         - sbt_cached:
+            steps: << parameters.steps >>
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
             no_output_timeout:  << parameters.no_output_timeout >>
