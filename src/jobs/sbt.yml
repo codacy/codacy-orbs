@@ -96,7 +96,7 @@ steps:
       steps:
         - run:
             name: Background sbt server
-            command: sbt
+            command: SBT_NATIVE_CLIENT=false sbt
             background: true
         - run:
             name: Wait for sbt server to start
