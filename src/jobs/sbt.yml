@@ -50,7 +50,7 @@ parameters:
     type: string
     default: "10m"
   use_sbt_native_client:
-    description: "Use the Sbt thin client"
+    description: "Use the sbt thin client"
     type: boolean
     default: false
 
@@ -95,7 +95,7 @@ steps:
       condition: << parameters.use_sbt_native_client >>
       steps:
         - run:
-            name: Start sbt server
+            name: Background sbt server
             command: sbt
             background: true
         - run:
@@ -106,10 +106,10 @@ steps:
               while ! ls .bsp/sbt.json 2> /dev/null ;
               do
                   sleep 1
-                  echo "Waiting for Sbt to start..."
+                  echo "Waiting for sbt to start..."
               done
 
-              echo "Sbt is ready"
+              echo "sbt is ready"
   - when:
       condition: << parameters.store_test_results >>
       steps:
