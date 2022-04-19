@@ -44,7 +44,7 @@ steps:
       steps:
         - run:
             name: Set SBT version
-            command: echo "version in ThisBuild := \"$(cat .version)\"" > version.sbt
+            command: echo "ThisBuild / version := \"$(cat .version)\"" > version.sbt
 
   - when:
       condition: <<parameters.overwrite_package_json_version>>
