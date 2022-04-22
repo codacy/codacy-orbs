@@ -1,6 +1,6 @@
 description: "A default sbt job"
 
-executor: machine
+executor: jdk
 
 parameters:
   steps:
@@ -110,6 +110,8 @@ steps:
               done
 
               echo "sbt is ready"
+  - setup_remote_docker:
+      version: 19.03.13
   - when:
       condition: << parameters.store_test_results >>
       steps:
