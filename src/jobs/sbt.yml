@@ -57,7 +57,6 @@ parameters:
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
   AWS_DEFAULT_REGION: << parameters.region >>
-  SBT_NATIVE_CLIENT: << parameters.use_sbt_native_client >>
 
 steps:
   - attach_workspace:
@@ -90,26 +89,6 @@ steps:
         else
           echo "no persisted workspace found"
         fi
-
-  - when:
-      condition: << parameters.use_sbt_native_client >>
-      steps:
-        - run:
-            name: Background sbt server
-            command: SBT_NATIVE_CLIENT=false sbt
-            background: true
-        - run:
-            name: Wait for sbt server to start
-            command: |
-              #!/bin/bash
-
-              while ! ls .bsp/sbt.json 2> /dev/null ;
-              do
-                  sleep 1
-                  echo "Waiting for sbt to start..."
-              done
-
-              echo "sbt is ready"
   - when:
       condition: << parameters.store_test_results >>
       steps:
@@ -119,6 +98,7 @@ steps:
             cache_prefix: << parameters.cache_prefix >>
             store_test_results_path: ~/workdir
             no_output_timeout:  << parameters.no_output_timeout >>
+            use_sbt_native_client:  << parameters.use_sbt_native_client >>
 
   - unless:
       condition: << parameters.store_test_results >>
@@ -128,6 +108,7 @@ steps:
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
             no_output_timeout:  << parameters.no_output_timeout >>
+            use_sbt_native_client:  << parameters.use_sbt_native_client >>
 
   - when:
       condition: << parameters.persist_to_workspace >>
