@@ -86,7 +86,8 @@ steps:
         else
           echo "no persisted workspace found"
         fi
-
+  - setup_remote_docker:
+      version: 19.03.13
   - when:
       condition: << parameters.use_sbt_native_client >>
       steps:
@@ -106,8 +107,6 @@ steps:
               done
 
               echo "sbt is ready"
-  - setup_remote_docker:
-      version: 19.03.13
   - when:
       condition: << parameters.store_test_results >>
       steps:
