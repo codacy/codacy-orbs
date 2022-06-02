@@ -29,7 +29,7 @@ jobs:
       - persist_to_workspace:
           root: ~/workdir
           paths:
-            - orb.yml
+            - '*'
 
   publish_dev:
     <<: *circleci_job
@@ -87,6 +87,7 @@ workflows:
       - codacy/tag_version:
           context: CodacyAWS
           name: tag_version
+          context: CodacyAWS
           requires:
             - pack_and_validate
 
