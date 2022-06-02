@@ -87,7 +87,7 @@ steps:
           echo "no persisted workspace found"
         fi
   - setup_remote_docker:
-      version: 19.03.13
+      version: 20.10.14
   - when:
       condition: << parameters.use_sbt_native_client >>
       steps:
