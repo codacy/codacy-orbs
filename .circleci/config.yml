@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  codacy: codacy/base@0.3.10
+  codacy: codacy/base@7.0.0
 
 references:
   circleci_job: &circleci_job
@@ -19,7 +19,7 @@ jobs:
     <<: *circleci_job
     steps:
       - attach_workspace:
-          at: ~/
+          at: ~/workdir
       - run:
           name: Pack orb
           command: circleci config pack src > orb.yml
@@ -27,15 +27,15 @@ jobs:
           name: Validate orb
           command: circleci orb validate orb.yml
       - persist_to_workspace:
-          root: ~/
+          root: ~/workdir
           paths:
-            - workdir/orb.yml
+            - '*'
 
   publish_dev:
     <<: *circleci_job
     steps:
       - attach_workspace:
-          at: ~/
+          at: ~/workdir
       - deploy:
           name: Publish orb as dev (deleted after 90 days)
           command: circleci orb publish orb.yml codacy/base@dev:$(cat .version) --token $CIRCLE_TOKEN
@@ -44,7 +44,7 @@ jobs:
     <<: *circleci_job
     steps:
       - attach_workspace:
-          at: ~/
+          at: ~/workdir
       - deploy:
           name: Publish final orb
           command: circleci orb publish orb.yml codacy/base@$(cat .version) --token $CIRCLE_TOKEN
@@ -86,6 +86,7 @@ workflows:
 
       - codacy/tag_version:
           name: tag_version
+          context: CodacyAWS
           requires:
             - pack_and_validate
 
