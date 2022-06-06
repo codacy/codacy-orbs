@@ -66,19 +66,8 @@ steps:
         EOF
   - setup_remote_docker:
       version: 20.10.14
-  - when:
-      condition: << parameters.store_test_results >>
-      steps:
-        - sbt_cached:
-            steps: << parameters.steps >>
-            cache_prefix: << parameters.cache_prefix >>
-            store_test_results_path: ~/workdir
-            no_output_timeout: << parameters.no_output_timeout >>
-            use_sbt_native_client: << parameters.use_sbt_native_client >>
-
   - sbt_cached:
       steps: << parameters.steps >>
-      cmd: << parameters.cmd >>
       cache_prefix: << parameters.cache_prefix >>
       no_output_timeout: << parameters.no_output_timeout >>
       use_sbt_native_client: << parameters.use_sbt_native_client >>
