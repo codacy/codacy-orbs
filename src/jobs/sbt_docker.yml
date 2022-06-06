@@ -15,10 +15,6 @@ parameters:
     description: "The AWS profile to be used"
     type: string
     default: "default"
-  region:
-    description: "The AWS region for the deployment"
-    type: string
-    default: eu-west-1
   credentials_file_content:
     description: "AWS credentials file contents to grant access for the step"
     type: string
@@ -33,19 +29,11 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
-  no_output_timeout:
-    description: "The time to wait for the command without output"
-    type: string
-    default: "10m"
-  use_sbt_native_client:
-    description: "Use the sbt thin client"
-    type: boolean
-    default: true
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
-  AWS_DEFAULT_REGION: << parameters.region >>
-  SBT_NATIVE_CLIENT: << parameters.use_sbt_native_client >>
+  AWS_DEFAULT_REGION: eu-west-1
+  SBT_NATIVE_CLIENT: true
 
 steps:
   - attach_workspace:
@@ -69,8 +57,8 @@ steps:
   - sbt_cached:
       steps: << parameters.steps >>
       cache_prefix: << parameters.cache_prefix >>
-      no_output_timeout: << parameters.no_output_timeout >>
-      use_sbt_native_client: << parameters.use_sbt_native_client >>
+      no_output_timeout: "10m"
+      use_sbt_native_client: true
 
   - when:
       condition: << parameters.persist_to_workspace >>
