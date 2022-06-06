@@ -122,8 +122,5 @@ steps:
         - save_cache:
             key: << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
             paths:
-              - "~/.ivy2"
-              - "~/.sbt"
-              - "~/.m2"
               - "~/.cache"
               - "~/targets.zip"
