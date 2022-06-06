@@ -25,6 +25,9 @@ parameters:
       [production]
       source_profile = default
       role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$CONTINUOUS_DELIVERY_ROLE
+      [bastion]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_BASTION:role/$CONTINUOUS_DELIVERY_ROLE
   deploy:
     description: "Use step type 'deploy' instead of 'run' for this command"
     type: boolean
