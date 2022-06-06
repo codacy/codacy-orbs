@@ -52,7 +52,7 @@ steps:
           if [[ -d "target" ]]; then
             echo "local workspace exists, skipping"
           else
-            echo "unpacking cache" && unzip ~/targets.zip
+            echo "unpacking cache" && unzip -q ~/targets.zip
           fi
         else
           echo "no cache found"
