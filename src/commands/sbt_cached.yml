@@ -44,19 +44,6 @@ steps:
         - << parameters.cache_prefix >>-{{ .Branch }}
         - << parameters.cache_prefix >>
 
-  - run:
-      name: Unpacking Caches
-      command: |
-        if [[ -f "$HOME/targets.tar.gz" ]]; then
-          echo "cache found"
-          if [[ -d "target" ]]; then
-            echo "local workspace exists, skipping"
-          else
-            echo "unpacking cache" && tar -xf ~/targets.tar.gz
-          fi
-        else
-          echo "no cache found"
-        fi
   - when:
       condition: << parameters.use_sbt_native_client >>
       steps:
@@ -110,16 +97,6 @@ steps:
   - when:
       condition: <<parameters.save_cache>>
       steps:
-        - run:
-            name: CleanCache
-            command: |
-              set +eo pipefail
-              find $HOME/.sbt -name "*.lock" | xargs rm | true
-              find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
-              # Workaround for this Sbt issue in CircleCI
-              # https://github.com/sbt/sbt/issues/4168
-              find -name target -type d -exec tar -zcf ~/targets.tar.gz -H posix {} + | true
-
         - save_cache:
             key: << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
             paths:
