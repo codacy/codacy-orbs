@@ -1,4 +1,4 @@
-description: "A default sbt job"
+description: "A sbt job using the Docker executor"
 
 executor: jdk
 
