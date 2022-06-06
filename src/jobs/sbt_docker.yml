@@ -1,0 +1,92 @@
+description: "A default sbt job"
+
+executor: jdk
+
+parameters:
+  steps:
+    description: "Steps to run"
+    type: steps
+    default: []
+  cache_prefix:
+    description: "The prefix of cache to be used"
+    type: string
+    default: sbt-cache-062022
+  aws_profile:
+    description: "The AWS profile to be used"
+    type: string
+    default: "default"
+  region:
+    description: "The AWS region for the deployment"
+    type: string
+    default: eu-west-1
+  credentials_file_content:
+    description: "AWS credentials file contents to grant access for the step"
+    type: string
+    default: |
+      [default]
+      aws_access_key_id=$ACCESS_KEY_ID
+      aws_secret_access_key=$SECRET_ACCESS_KEY
+      [maven]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$MAVEN_PUBLISHER_ROLE
+  persist_to_workspace:
+    description: "Whether to persist the workspace or not at the end of the job"
+    type: boolean
+    default: false
+  no_output_timeout:
+    description: "The time to wait for the command without output"
+    type: string
+    default: "10m"
+  use_sbt_native_client:
+    description: "Use the sbt thin client"
+    type: boolean
+    default: true
+
+environment:
+  AWS_PROFILE: << parameters.aws_profile >>
+  AWS_DEFAULT_REGION: << parameters.region >>
+  SBT_NATIVE_CLIENT: << parameters.use_sbt_native_client >>
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+  - run:
+      name: Download and install sbt
+      command: |
+        sbt_version=$(cat project/build.properties | grep sbt.version | sed "s/ *sbt\.version *= *//")
+        wget https://repo.scala-sbt.org/scalasbt/debian/sbt-$sbt_version.deb
+        sudo dpkg -i sbt-$sbt_version.deb
+        rm -f sbt-$sbt_version.deb
+  - run:
+      name: Setup AWS Credentials
+      command: |
+        mkdir -p ~/.aws && touch ~/.aws/credentials
+        cat >> ~/.aws/credentials \<< EOF
+        << parameters.credentials_file_content >>
+        EOF
+  - setup_remote_docker:
+      version: 20.10.14
+  - when:
+      condition: << parameters.store_test_results >>
+      steps:
+        - sbt_cached:
+            steps: << parameters.steps >>
+            cache_prefix: << parameters.cache_prefix >>
+            store_test_results_path: ~/workdir
+            no_output_timeout: << parameters.no_output_timeout >>
+            use_sbt_native_client: << parameters.use_sbt_native_client >>
+
+  - sbt_cached:
+      steps: << parameters.steps >>
+      cmd: << parameters.cmd >>
+      cache_prefix: << parameters.cache_prefix >>
+      no_output_timeout: << parameters.no_output_timeout >>
+      use_sbt_native_client: << parameters.use_sbt_native_client >>
+
+  - when:
+      condition: << parameters.persist_to_workspace >>
+      steps:
+        - persist_to_workspace:
+            root: ~/workdir
+            paths:
+              - "*"

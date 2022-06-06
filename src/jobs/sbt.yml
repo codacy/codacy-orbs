@@ -1,6 +1,6 @@
 description: "A default sbt job"
 
-executor: jdk
+executor: machine
 
 parameters:
   steps:
@@ -79,6 +79,10 @@ steps:
         << parameters.credentials_file_content >>
         EOF
   - run:
+      name: Set OpenJdk
+      command: sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+
+  - run:
       name: Uncompress local targets
       command: |
         if [[ -f "targets.tar.gz" ]]; then
@@ -86,8 +90,6 @@ steps:
         else
           echo "no persisted workspace found"
         fi
-  - setup_remote_docker:
-      version: 20.10.14
   - when:
       condition: << parameters.store_test_results >>
       steps:
