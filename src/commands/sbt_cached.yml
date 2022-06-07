@@ -65,6 +65,9 @@ steps:
             command: SBT_NATIVE_CLIENT=false sbt
             background: true
         - run:
+            name: Set SBT_NATIVE_CLIENT env variable
+            command: echo 'export SBT_NATIVE_CLIENT=true' >> $BASH_ENV
+        - run:
             name: Wait for sbt server to start
             command: |
               #!/bin/bash

@@ -57,7 +57,6 @@ parameters:
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
   AWS_DEFAULT_REGION: << parameters.region >>
-  SBT_NATIVE_CLIENT: << parameters.use_sbt_native_client >>
 
 steps:
   - attach_workspace:
