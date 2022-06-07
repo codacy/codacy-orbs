@@ -30,6 +30,10 @@ parameters:
     description: "The time to wait for the command without output"
     type: string
     default: "10m"
+  use_sbt_native_client:
+    description: "Use the sbt thin client"
+    type: boolean
+    default: false
 
 steps:
 
@@ -43,16 +47,38 @@ steps:
   - run:
       name: Unpacking Caches
       command: |
-        if [[ -f "$HOME/targets.tar.gz" ]]; then
+        if [[ -f "$HOME/targets.zip" ]]; then
           echo "cache found"
           if [[ -d "target" ]]; then
             echo "local workspace exists, skipping"
           else
-            echo "unpacking cache" && tar -xf ~/targets.tar.gz
+            echo "unpacking cache" && unzip -q ~/targets.zip
           fi
         else
           echo "no cache found"
         fi
+  - when:
+      condition: << parameters.use_sbt_native_client >>
+      steps:
+        - run:
+            name: Background sbt server
+            command: SBT_NATIVE_CLIENT=false sbt
+            background: true
+        - run:
+            name: Set SBT_NATIVE_CLIENT env variable
+            command: echo 'export SBT_NATIVE_CLIENT=true' >> $BASH_ENV
+        - run:
+            name: Wait for sbt server to start
+            command: |
+              #!/bin/bash
+
+              while ! ls .bsp/sbt.json 2> /dev/null ;
+              do
+                  sleep 1
+                  echo "Waiting for sbt to start..."
+              done
+
+              echo "sbt is ready"
   - when:
       condition: <<parameters.steps>>
       steps:
@@ -93,15 +119,11 @@ steps:
               set +eo pipefail
               find $HOME/.sbt -name "*.lock" | xargs rm | true
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
-              # Workaround for this Sbt issue in CircleCI
-              # https://github.com/sbt/sbt/issues/4168
-              find -name target -type d -exec tar -zcf ~/targets.tar.gz -H posix {} + | true
+              # zip all targets to a single file
+              find -name target -type d -prune -print | zip -r -q -1 -@ ~/targets.zip
 
         - save_cache:
             key: << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
             paths:
-              - "~/.ivy2"
-              - "~/.sbt"
-              - "~/.m2"
               - "~/.cache"
-              - "~/targets.tar.gz"
+              - "~/targets.zip"
