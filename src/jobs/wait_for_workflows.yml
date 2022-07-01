@@ -1,0 +1,30 @@
+description: "Wait for running workflows for this project and branch to finish"
+
+executor: aws
+
+parameters:
+  project_slug:
+    description: "Project slug for which to search for pipelines"
+    type: string
+    default: "$(echo $CIRCLE_BUILD_URL | cut -d/ -f 4-6)"
+  branch:
+    description: "Branch for which to search for pipelines"
+    type: string
+    default: "$CIRCLE_BRANCH"
+  sleep:
+    description: "Time (in seconds) between each check"
+    type: integer
+    default: 30
+  timeout:
+    description: "Timeout (in seconds) after which the workflow will be stopped"
+    type: integer
+    default: 2400
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+
+  - run:
+      name: Wait for running pipelines
+      command: |
+        /scripts/wait_for_workflows.py -k $CIRCLE_TOKEN -w $CIRCLE_WORKFLOW_ID -p <<parameters.project_slug>> -b <<parameters.branch>> -t <<parameters.timeout>> -s <<parameters.sleep>>
