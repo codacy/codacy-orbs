@@ -120,7 +120,7 @@ steps:
               find $HOME/.sbt -name "*.lock" | xargs rm | true
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
               # zip all targets to a single file
-              find -name target -type d -prune -print | zip -r -q -1 -@ ~/targets.zip
+              find . -name target -type d -prune -print | zip -r -q -1 -@ ~/targets.zip
 
         - save_cache:
             key: << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
