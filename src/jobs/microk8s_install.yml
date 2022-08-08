@@ -36,10 +36,6 @@ parameters:
     description: "Time to wait for kubectl commands"
     type: integer
     default: 300
-  kubectl_retries:
-    description: "Number of reties for kubectl commands"
-    type: integer
-    default: 15
   helm_timeout:
     description: "Time to wait for helm commands"
     type: integer
@@ -125,14 +121,9 @@ steps:
         sudo microk8s.stop && sudo microk8s.start && microk8s_wait_ready << parameters.microk8s_wait_retries >>
 
         # Wait for kube-dns and hostpath-provisioner, or pods will quickly enter a crashloop
-        for ((i=0; i< <<parameters.kubectl_retries>>; i++)); do
-          if eval sudo microk8s.kubectl get deployment -n kube-system hostpath-provisioner coredns; then
-            echo "Deployments created. Waiting for pods to be ready..."
-            break
-          fi
-          sleep 1
-        done
+        sudo microk8s.kubectl rollout status deployment -n kube-system coredns
         sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=kube-dns --timeout=<< parameters.kubectl_timeout >>s
+        sudo microk8s.kubectl rollout status deployment -n kube-system hostpath-provisioner
         sudo microk8s.kubectl wait -n kube-system --for=condition=Ready pod -l k8s-app=hostpath-provisioner --timeout=<< parameters.kubectl_timeout >>s
 
   - run:
