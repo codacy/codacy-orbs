@@ -52,7 +52,7 @@ steps:
         << parameters.credentials_file_content >>
         EOF
   - setup_remote_docker:
-      version: 20.10.14
+      version: 20.10.17
   - sbt_cached:
       steps: << parameters.steps >>
       cache_prefix: << parameters.cache_prefix >>
