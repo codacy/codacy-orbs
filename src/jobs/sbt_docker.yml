@@ -29,6 +29,10 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
+  use_sbt_native_client:
+    description: "Use the sbt thin client"
+    type: boolean
+    default: true
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -57,7 +61,7 @@ steps:
       steps: << parameters.steps >>
       cache_prefix: << parameters.cache_prefix >>
       no_output_timeout: "10m"
-      use_sbt_native_client: true
+      use_sbt_native_client: << parameters.use_sbt_native_client >>
 
   - when:
       condition: << parameters.persist_to_workspace >>
