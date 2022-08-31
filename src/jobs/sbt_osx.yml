@@ -56,7 +56,13 @@ steps:
         # Call brew update explicitly until Circle CI update their images,
         # see https://github.com/Homebrew/brew/issues/11123
         brew update
-        brew install openjdk@8 sbt
+        # Pin openjdk@8
+        brew install openjdk@8
+        sudo ln -sfn /usr/local/opt/openjdk@8/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-8.jdk
+        echo 'export PATH="/usr/local/opt/openjdk@8/bin:$PATH"' >> /Users/distiller/.bash_profile
+        export CPPFLAGS="-I/usr/local/opt/openjdk@8/include"
+        # Install sbt without overriding openjdk@8
+        brew install --ignore-dependencies sbt
   - run:
       name: Setup AWS Credentials
       command: |
