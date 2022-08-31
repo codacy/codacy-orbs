@@ -56,7 +56,7 @@ steps:
         # Call brew update explicitly until Circle CI update their images,
         # see https://github.com/Homebrew/brew/issues/11123
         brew update
-        brew install sbt
+        brew install openjdk@8 sbt
   - run:
       name: Setup AWS Credentials
       command: |
