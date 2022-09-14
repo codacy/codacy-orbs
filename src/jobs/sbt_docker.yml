@@ -33,6 +33,10 @@ parameters:
     description: "Use the sbt thin client"
     type: boolean
     default: true
+  setup_remote_docker:
+    description: "Setup remote docker to run docker commands"
+    type: boolean
+    default: true
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -57,8 +61,11 @@ steps:
         cat >> ~/.aws/credentials \<< EOF
         << parameters.credentials_file_content >>
         EOF
-  - setup_remote_docker:
-      version: 20.10.14
+  - when:
+      condition: << parameters.setup_remote_docker >>
+      steps:
+        - setup_remote_docker:
+            version: 20.10.14
   - sbt_cached:
       steps: << parameters.steps >>
       cache_prefix: << parameters.cache_prefix >>
