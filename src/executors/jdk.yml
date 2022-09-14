@@ -2,6 +2,6 @@ description: >
   A docker image to use JDK 8
 
 docker:
-  - image: cimg/openjdk:8.0
+  - image: cimg/openjdk:8.0.322
 
 working_directory: ~/workdir
