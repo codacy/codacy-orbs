@@ -2,6 +2,6 @@ description: >
   A docker image to use JDK 8
 
 docker:
-  - image: cimg/openjdk@sha256:6e87a4c87e72e6be00739ae3719d85d68e679eb369f20759cd257547565726fa
+  - image: cimg/openjdk:8.0
 
 working_directory: ~/workdir

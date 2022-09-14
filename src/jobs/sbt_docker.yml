@@ -44,6 +44,8 @@ steps:
   - run:
       name: Download and install sbt
       command: |
+        # get rid of the pre-installed sbt
+        sudo rm -rf /opt/sbt/
         sbt_version=$(cat project/build.properties | grep sbt.version | sed "s/ *sbt\.version *= *//")
         wget https://repo.scala-sbt.org/scalasbt/debian/sbt-$sbt_version.deb
         sudo dpkg -i sbt-$sbt_version.deb
