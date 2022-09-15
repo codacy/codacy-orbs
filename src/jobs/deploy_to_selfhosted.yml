@@ -4,9 +4,13 @@ executor: do
 
 parameters:
   chart_name:
-    description: The helm release name to be installed.
+    description: The helm chart name to be installed.
     type: string
     default: "default-release"
+  release_name:
+    description: The helm release name to be created on the cluster for the given chart_name.
+    type: string
+    default: ""
   environment:
     description: The target environment for the release [dev / sandbox / release].
     type: string
@@ -23,6 +27,10 @@ parameters:
     description: The helm channel from which the component chart will be retrieved [unstable / incubator / stable].
     type: string
     default: "unstable"
+  chart_version:
+    description: "Version of the chart"
+    type: string
+    default: "$(cat .version)"
 
 steps:
   - attach_workspace:
@@ -65,7 +73,12 @@ steps:
       name: Install component
       command: |
         version=$(cat .version)
-        helm upgrade --install <<parameters.chart_name>> codacy-<<parameters.helm_channel>>/<<parameters.chart_name>> \
+        if [ -z "<< parameters.release_name >>" ] ; then
+          RELEASE_NAME="<< parameters.release_name >>"
+        else
+          RELEASE_NAME="<< parameters.chart_name >>"
+        fi
+        helm upgrade --install $RELEASE_NAME codacy-<<parameters.helm_channel>>/<<parameters.chart_name>> \
         --devel \
         --atomic \
         --timeout=600s \
@@ -73,7 +86,7 @@ steps:
         -f values.yaml \
         -f values-production.yaml \
         -f values-selfhosted.yaml \
-        --version $version \
+        --version << parameters.chart_version >> \
         --set global.imagePullSecrets[0].name=docker-credentials \
         --set global.play.cryptoSecret=$SHARED_PLAY_CRYPTO_SECRET \
         --set global.akka.sessionSecret=$SHARED_AKKA_SESSION_SECRET \
