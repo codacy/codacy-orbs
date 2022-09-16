@@ -20,6 +20,14 @@ parameters:
     description: "Helm update key image.tag in values.yaml"
     type: boolean
     default: true
+  app_version:
+    description: "Version of the app used in the chart"
+    type: string
+    default: "$(cat .version)"
+  chart_version:
+    description: "Version of the chart (must be semver)"
+    type: string
+    default: "$(cat .version)"
 
 executor: aws
 
@@ -33,9 +41,9 @@ steps:
   - run:
       name: Set image tag and version using semver
       command: |
-        ytool -s appVersion "$(cat .version)" -s version "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/Chart.yaml" -e
+        ytool -s appVersion "<< parameters.app_version >>" -s version "<< parameters.chart_version >>" -f "${HELM_DIR}/${CHART_NAME}/Chart.yaml" -e
         if [ "<< parameters.update_image_version >>" = "true" ]; then
-          ytool -s image.tag "$(cat .version)" -f "${HELM_DIR}/${CHART_NAME}/values.yaml" -e
+          ytool -s image.tag "<< parameters.app_version >>" -f "${HELM_DIR}/${CHART_NAME}/values.yaml" -e
         fi
         git --no-pager diff --no-color
 
