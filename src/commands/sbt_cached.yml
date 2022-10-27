@@ -62,9 +62,9 @@ steps:
           echo "no cache found"
         fi
   - when:
-      condition: <<parameters.steps>>
+      condition: <<parameters.steps_before_sbt>>
       steps:
-        - <<parameters.steps>>
+        - <<parameters.steps_before_sbt>>
   - when:
       condition: << parameters.use_sbt_native_client >>
       steps:
