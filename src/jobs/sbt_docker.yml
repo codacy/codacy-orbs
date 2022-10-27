@@ -7,6 +7,10 @@ parameters:
     description: "Steps to run"
     type: steps
     default: []
+  steps_before_sbt:
+    description: "Steps to run before Sbt starts"
+    type: steps
+    default: []
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
@@ -68,6 +72,7 @@ steps:
             version: 20.10.14
   - sbt_cached:
       steps: << parameters.steps >>
+      steps_before_sbt: << parameters.steps_before_sbt >>
       cache_prefix: << parameters.cache_prefix >>
       no_output_timeout: "10m"
       use_sbt_native_client: << parameters.use_sbt_native_client >>

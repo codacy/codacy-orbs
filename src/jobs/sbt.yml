@@ -7,6 +7,10 @@ parameters:
     description: "Steps to run"
     type: steps
     default: []
+  steps_before_sbt:
+    description: "Steps to run before Sbt starts"
+    type: steps
+    default: []
   cmd:
     description: "SBT command to run"
     type: string
@@ -94,6 +98,7 @@ steps:
       steps:
         - sbt_cached:
             steps: << parameters.steps >>
+            steps_before_sbt: << parameters.steps_before_sbt >>
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
             store_test_results_path: ~/workdir
@@ -105,6 +110,7 @@ steps:
       steps:
         - sbt_cached:
             steps: << parameters.steps >>
+            steps_before_sbt: << parameters.steps_before_sbt >>
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
             no_output_timeout:  << parameters.no_output_timeout >>
