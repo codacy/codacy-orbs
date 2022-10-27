@@ -10,6 +10,10 @@ parameters:
     description: "SBT command to run"
     type: string
     default: ""
+  steps_before_sbt:
+    description: "Steps to run before Sbt starts"
+    type: steps
+    default: []
   steps:
     description: "SBT steps to run"
     type: steps
@@ -57,6 +61,10 @@ steps:
         else
           echo "no cache found"
         fi
+  - when:
+      condition: <<parameters.steps>>
+      steps:
+        - <<parameters.steps>>
   - when:
       condition: << parameters.use_sbt_native_client >>
       steps:
