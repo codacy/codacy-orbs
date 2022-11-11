@@ -70,7 +70,13 @@ steps:
       steps:
         - run:
             name: Background sbt server
-            command: SBT_NATIVE_CLIENT=false sbt
+            command: |
+              set +eo pipefail
+              SBT_NATIVE_CLIENT=false sbt
+              # if previous command failed create file
+              if [ $? -ne 0 ]; then
+                touch .sbt-failed-to-start
+              fi
             background: true
         - run:
             name: Set SBT_NATIVE_CLIENT env variable
@@ -82,6 +88,10 @@ steps:
 
               while ! ls .bsp/sbt.json 2> /dev/null ;
               do
+                  if [ -f .sbt-failed-to-start ]; then
+                    echo "sbt failed to start"
+                    exit 1
+                  fi
                   sleep 1
                   echo "Waiting for sbt to start..."
               done
