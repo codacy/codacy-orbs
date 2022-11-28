@@ -53,9 +53,6 @@ steps:
       environment:
         HOMEBREW_NO_AUTO_UPDATE: 1
       command: |
-        # Call brew update explicitly until Circle CI update their images,
-        # see https://github.com/Homebrew/brew/issues/11123
-        brew update
         # Pin openjdk@8
         brew install openjdk@8
         sudo ln -sfn /usr/local/opt/openjdk@8/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-8.jdk
