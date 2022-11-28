@@ -44,7 +44,7 @@ steps:
       steps:
         - run:
             name: Set SBT version
-            command: echo "version in ThisBuild := \"$(cat .version)\"" > version.sbt
+            command: echo "ThisBuild / version := \"$(cat .version)\"" > version.sbt
 
   - when:
       condition: <<parameters.overwrite_package_json_version>>
@@ -53,6 +53,7 @@ steps:
             name: Set package.json version
             command: |
               mv package.json temp.json
+              apk add --no-cache jq
               jq -r ".version |= \"$(cat .version)\"" temp.json > package.json
               rm temp.json
 

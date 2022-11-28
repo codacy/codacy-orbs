@@ -3,6 +3,6 @@ description: >
     https://circleci.com/docs/2.0/configuration-reference/#macos
 
 macos:
-  xcode: "12.4.0"
+  xcode: "13.4.1"
 
 working_directory: ~/workdir

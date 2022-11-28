@@ -1,28 +1,24 @@
-description: "A default sbt job"
+description: "A sbt job using the Docker executor"
 
-executor: osx
+executor: jdk
 
 parameters:
   steps:
     description: "Steps to run"
     type: steps
     default: []
-  cmd:
-    description: "SBT command to run"
-    type: string
-    default: ""
+  steps_before_sbt:
+    description: "Steps to run before Sbt starts"
+    type: steps
+    default: []
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
-    default: sbt-osx-cache-032020
+    default: sbt-cache-062022
   aws_profile:
     description: "The AWS profile to be used"
     type: string
     default: "default"
-  region:
-    description: "The AWS region for the deployment"
-    type: string
-    default: eu-west-1
   credentials_file_content:
     description: "AWS credentials file contents to grant access for the step"
     type: string
@@ -37,29 +33,31 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
-  persist_to_workspace_path:
-    description: "The folder to be persisted"
-    type: string
-    default: "*"
+  use_sbt_native_client:
+    description: "Use the sbt thin client"
+    type: boolean
+    default: true
+  setup_remote_docker:
+    description: "Setup remote docker to run docker commands"
+    type: boolean
+    default: true
+
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
-  AWS_DEFAULT_REGION: << parameters.region >>
+  AWS_DEFAULT_REGION: eu-west-1
 
 steps:
   - attach_workspace:
       at: ~/workdir
   - run:
       name: Download and install sbt
-      environment:
-        HOMEBREW_NO_AUTO_UPDATE: 1
       command: |
-        # Pin openjdk@8
-        brew install openjdk@8
-        sudo ln -sfn /usr/local/opt/openjdk@8/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-8.jdk
-        echo 'export PATH="/usr/local/opt/openjdk@8/bin:$PATH"' >> /Users/distiller/.bash_profile
-        export CPPFLAGS="-I/usr/local/opt/openjdk@8/include"
-        # Install sbt without overriding openjdk@8
-        brew install --ignore-dependencies sbt
+        # get rid of the pre-installed sbt
+        sudo rm -rf /opt/sbt/
+        sbt_version=$(cat project/build.properties | grep sbt.version | sed "s/ *sbt\.version *= *//")
+        wget https://repo.scala-sbt.org/scalasbt/debian/sbt-$sbt_version.deb
+        sudo dpkg -i sbt-$sbt_version.deb
+        rm -f sbt-$sbt_version.deb
   - run:
       name: Setup AWS Credentials
       command: |
@@ -67,22 +65,22 @@ steps:
         cat >> ~/.aws/credentials \<< EOF
         << parameters.credentials_file_content >>
         EOF
-  - run:
-      name: Uncompress local targets
-      command: |
-        if [[ -f "targets.tar.gz" ]]; then
-          echo "unpacking persisted workspace" && tar -xf targets.tar.gz
-        else
-          echo "no persisted workspace found"
-        fi
+  - when:
+      condition: << parameters.setup_remote_docker >>
+      steps:
+        - setup_remote_docker:
+            version: 20.10.14
   - sbt_cached:
       steps: << parameters.steps >>
-      cmd: << parameters.cmd >>
+      steps_before_sbt: << parameters.steps_before_sbt >>
       cache_prefix: << parameters.cache_prefix >>
+      no_output_timeout: "10m"
+      use_sbt_native_client: << parameters.use_sbt_native_client >>
+
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:
         - persist_to_workspace:
             root: ~/workdir
             paths:
-              - << parameters.persist_to_workspace_path >>
+              - "*"

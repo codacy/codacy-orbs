@@ -3,9 +3,18 @@ description: "A default sbt job"
 executor: machine
 
 parameters:
+  steps:
+    description: "Steps to run"
+    type: steps
+    default: []
+  steps_before_sbt:
+    description: "Steps to run before Sbt starts"
+    type: steps
+    default: []
   cmd:
     description: "SBT command to run"
     type: string
+    default: ""
   cache_prefix:
     description: "The prefix of cache to be used"
     type: string
@@ -44,6 +53,10 @@ parameters:
     description: "The time to wait for the command without output"
     type: string
     default: "10m"
+  use_sbt_native_client:
+    description: "Use the sbt thin client"
+    type: boolean
+    default: false
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -58,7 +71,7 @@ steps:
         - run:
             name: Download and install sbt << parameters.install_sbt_version >>
             command: |
-              wget https://dl.bintray.com/sbt/debian/sbt-<< parameters.install_sbt_version >>.deb
+              wget https://repo.scala-sbt.org/scalasbt/debian/sbt-<< parameters.install_sbt_version >>.deb
               sudo dpkg -i sbt-<< parameters.install_sbt_version >>.deb
               rm -f sbt-<< parameters.install_sbt_version >>.deb
   - run:
@@ -80,23 +93,28 @@ steps:
         else
           echo "no persisted workspace found"
         fi
-
   - when:
       condition: << parameters.store_test_results >>
       steps:
         - sbt_cached:
+            steps: << parameters.steps >>
+            steps_before_sbt: << parameters.steps_before_sbt >>
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
             store_test_results_path: ~/workdir
             no_output_timeout:  << parameters.no_output_timeout >>
+            use_sbt_native_client:  << parameters.use_sbt_native_client >>
 
   - unless:
       condition: << parameters.store_test_results >>
       steps:
         - sbt_cached:
+            steps: << parameters.steps >>
+            steps_before_sbt: << parameters.steps_before_sbt >>
             cmd: << parameters.cmd >>
             cache_prefix: << parameters.cache_prefix >>
             no_output_timeout:  << parameters.no_output_timeout >>
+            use_sbt_native_client:  << parameters.use_sbt_native_client >>
 
   - when:
       condition: << parameters.persist_to_workspace >>
