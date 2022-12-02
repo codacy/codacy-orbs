@@ -22,6 +22,10 @@ parameters:
     description: "The name of the cluster"
     type: string
     default: "codacy-eks-cluster"
+  persist_to_workspace:
+    description: "Whether to persist the workspace or not at the end of the job"
+    type: boolean
+    default: false
 
 executor: aws
 
@@ -54,3 +58,11 @@ steps:
         - run:
             name: Helm command - << parameters.cmd >>
             command: << parameters.cmd >>
+
+  - when:
+      condition: << parameters.persist_to_workspace >>
+      steps:
+        - persist_to_workspace:
+            root: ~/workdir
+            paths:
+              - '*'
