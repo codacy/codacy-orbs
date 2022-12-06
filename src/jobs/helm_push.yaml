@@ -54,4 +54,4 @@ steps:
 
         echo "Adding '<< parameters.charts_repo_url >>'"
         helm repo add --username "${CHARTS_REPO_USER}" --password "${CHARTS_REPO_PASS}" codacy << parameters.charts_repo_url >>
-        helm push ${HELM_DIR}/${CHART_NAME} codacy << parameters.push_options >>
+        helm cm-push ${HELM_DIR}/${CHART_NAME} codacy << parameters.push_options >>
