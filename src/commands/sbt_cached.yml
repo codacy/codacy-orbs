@@ -48,19 +48,6 @@ steps:
         - << parameters.cache_prefix >>-{{ .Branch }}
         - << parameters.cache_prefix >>
 
-  - run:
-      name: Unpacking Caches
-      command: |
-        if [[ -f "$HOME/targets.zip" ]]; then
-          echo "cache found"
-          if [[ -d "target" ]]; then
-            echo "local workspace exists, skipping"
-          else
-            echo "unpacking cache" && unzip -q ~/targets.zip
-          fi
-        else
-          echo "no cache found"
-        fi
   - when:
       condition: <<parameters.steps_before_sbt>>
       steps:
@@ -137,11 +124,8 @@ steps:
               set +eo pipefail
               find $HOME/.sbt -name "*.lock" | xargs rm | true
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
-              # zip all targets to a single file
-              find . -name target -type d -prune -print | zip -r -q -1 -@ ~/targets.zip
 
         - save_cache:
             key: << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
             paths:
               - "~/.cache"
-              - "~/targets.zip"
