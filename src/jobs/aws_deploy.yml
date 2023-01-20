@@ -14,6 +14,19 @@ parameters:
     description: "The AWS region where to deploy"
     type: string
     default: eu-west-1
+  notify_slack:
+    description: "Whether to send slack notifications"
+    type: boolean
+    default: false
+  notify_channel:
+    description: "Slack channel where to send notifications"
+    type: string
+    default: $SLACK_DEFAULT_CHANNEL
+  notify_failure_mentions:
+    description: "Slack handles to mention on the failure notification"
+    type: string
+    default: ''
+
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -27,3 +40,17 @@ steps:
       cmd_name: AWS deploy command - << parameters.cmd >>
       deploy: true
       cmd: << parameters.cmd >>
+
+  - when:
+      condition: << parameters.notify_slack >>
+      steps:
+        - slack/notify:
+            event: fail
+            channel: << parameters.notify_channel >>
+            mentions: << parameters.notify_failure_mentions >>
+            template: basic_fail_1
+        - slack/notify:
+            event: pass
+            channel: << parameters.notify_channel >>
+            template: success_tagged_deploy_1
+

@@ -26,6 +26,18 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
+  notify_slack:
+    description: "Whether to send slack notifications"
+    type: boolean
+    default: false
+  notify_channel:
+    description: "Slack channel where to send notifications"
+    type: string
+    default: $SLACK_DEFAULT_CHANNEL
+  notify_failure_mentions:
+    description: "Slack handles to mention on the failure notification"
+    type: string
+    default: ''
 
 executor: aws
 
@@ -66,3 +78,16 @@ steps:
             root: ~/workdir
             paths:
               - '*'
+  - when:
+      condition: << parameters.notify_slack >>
+      steps:
+        - slack/notify:
+            event: fail
+            channel: << parameters.notify_channel >>
+            mentions: << parameters.notify_failure_mentions >>
+            template: basic_fail_1
+        - slack/notify:
+            event: pass
+            channel: << parameters.notify_channel >>
+            template: success_tagged_deploy_1
+
