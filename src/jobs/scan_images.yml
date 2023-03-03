@@ -47,7 +47,7 @@ parameters:
             {{- \$_ := set \$severities .Vulnerability.Severity 1 -}}
         {{- end -}}
       {{- end -}}
-      <https://github.com/{{ regexReplaceAll \"(.*):(.*)\" .Source.Target.UserInput \"\${1}\" }}|{{ .Source.Target.UserInput }}> - {{ .Distro.Name }}:{{ .Distro.Version }} - {{ len .Matches }}
+      <https://github.com/{{ regexReplaceAll "(.*):(.*)" .Source.Target.UserInput "\${1}" }}|{{ .Source.Target.UserInput }}> - {{ .Distro.Name }}:{{ .Distro.Version }} - {{ len .Matches }}
       {{ range keys \$severities | uniq | sortAlpha -}}
         *{{ . }}*: {{ get \$severities . }}/
       {{- end }}
@@ -138,7 +138,6 @@ steps:
           CROP_SIZE=$((<< parameters.notify_message_max_size >> - ${#CROP_INFO}))
           SCAN_SUMMARY="${SCAN_SUMMARY:0:$CROP_SIZE}${CROP_INFO}"
         fi
-        SCAN_SUMMARY=${SCAN_SUMMARY//$'\n'/\\n}
         echo "export SCAN_SUMMARY='$SCAN_SUMMARY'" >> $BASH_ENV
   - when:
       condition: << parameters.persist_to_workspace >>
