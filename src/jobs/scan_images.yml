@@ -113,8 +113,8 @@ steps:
         if [ -z $IMAGE_FILE ]; then
           IMAGE_FILE="$SCAN_DIR/image_file.txt"
           echo "<< parameters.images >>" | tr " " "\n" > $IMAGE_FILE
-        fi            
-        IMAGES_TO_SCAN=$(cat $IMAGE_FILE | grep . | wc -l); SCANNED_IMAGES=$IMAGES_TO_SCAN 
+        fi
+        IMAGES_TO_SCAN=$(cat $IMAGE_FILE | grep . | wc -l); SCANNED_IMAGES=$IMAGES_TO_SCAN
         echo ", <$CIRCLE_BUILD_URL|Complete Report>" > << parameters.scan_summary_file >>
         echo -e "<< parameters.scan_summary_template >>" > $SCAN_DIR/scan_summary_template.tmpl
         while read -r image || [[ -n $image ]]; do
