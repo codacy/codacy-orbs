@@ -136,7 +136,7 @@ steps:
         if [ ${#SCAN_SUMMARY} -gt << parameters.notify_message_max_size >> ]; then
           CROP_INFO="\nReport truncated due to message size limit. See the full report <$CIRCLE_BUILD_URL|here>."
           CROP_SIZE=$((<< parameters.notify_message_max_size >> - ${#CROP_INFO}))
-          SCAN_SUMMARY="${SCAN_SUMMARY:0:$CROP_SIZE}${CROP_INFO}"
+          SCAN_SUMMARY="${SCAN_SUMMARY:0:$CROP_SIZE}"; SCAN_SUMMARY="${SCAN_SUMMARY%\\}${CROP_INFO}"
         fi
         SCAN_SUMMARY=${SCAN_SUMMARY//$'\n'/\\n}
         echo "export SCAN_SUMMARY='$SCAN_SUMMARY'" >> $BASH_ENV
