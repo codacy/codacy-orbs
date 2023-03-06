@@ -1,6 +1,6 @@
 description: |
   Generates SBOMs and performs vulnerability scans given a list of docker images specified in
-  image_file and stores the resulting summary in scan_summary_file.
+  'images' or 'image_file' and stores the resulting summary in scan_summary_file.
   A scan summary can be sent to Slack if required.
 
 executor: machine
