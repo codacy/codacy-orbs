@@ -1,0 +1,156 @@
+description: |
+  Generates SBOMs and performs vulnerability scans given a list of docker images specified in
+  'images' or 'image_file' and stores the resulting summary in scan_summary_file.
+  A scan summary can be sent to Slack if required.
+
+executor: machine
+
+parameters:
+  persist_to_workspace:
+    description: Whether to persist the workspace or not at the end of the job.
+    type: boolean
+    default: false
+  syft_version:
+    description: Syft version to install.
+    type: string
+    default: v0.74.0
+  grype_version:
+    description: Grype version to install.
+    type: string
+    default: v0.59.0
+  images:
+    description: |
+      Sequence of Docker image tags to scan, each separated by whitespace.
+      Preterred in favor of 'image_file'.
+    type: string
+    default: ""
+  image_file:
+    description: |
+      Path to Docker image tags file to scan. Takes precedence over 'images'.
+    type: string
+    default: ""
+  scan_summary_file:
+    description: Vulnerability scan summary file.
+    type: string
+    default: vulnerability_scan.txt
+  scan_summary_template:
+    description: Defines output format to be returned by Grype scan.
+    type: string
+    default: |
+      {{- \$severities := dict -}}
+      {{- range .Matches -}}
+        {{- \$severity := get \$severities .Vulnerability.Severity -}}
+        {{- if \$severity -}}
+            {{- \$sum := add 1 \$severity -}}
+            {{- \$_ := set \$severities .Vulnerability.Severity \$sum -}}
+        {{- else -}}
+            {{- \$_ := set \$severities .Vulnerability.Severity 1 -}}
+        {{- end -}}
+      {{- end -}}
+      <https://github.com/{{ regexReplaceAll \"(.*):(.*)\" .Source.Target.UserInput \"\${1}\" }}|{{ .Source.Target.UserInput }}> - {{ .Distro.Name }}:{{ .Distro.Version }} - {{ len .Matches }}
+      {{ range keys \$severities | uniq | sortAlpha -}}
+        *{{ . }}*: {{ get \$severities . }}/
+      {{- end }}
+  notify_slack:
+    description: Whether to send a slack notification.
+    type: boolean
+    default: false
+  notify_channel:
+    description: Slack channel where to send notification.
+    type: string
+    default: $SLACK_DEFAULT_CHANNEL
+  notify_mentions:
+    description: Users to be notified in Slack message.
+    type: string
+    default: ""
+  notify_message_max_size:
+    description: |
+      Maximum notification size, respecting Slack message character limit.
+    type: integer
+    default: 2990
+  notification_template:
+    description: Slack notification template.
+    type: string
+    default: |
+      {
+        "blocks": [
+          {
+            "type": "header",
+            "text": {
+              "type": "plain_text",
+              "text": ":hackerman: Codacy Tools Vulnerability Scan Summary :hackerman:",
+              "emoji": true
+            }
+          },
+          {
+            "type": "divider"
+          },
+          {
+            "type": "section",
+            "text": {
+              "type": "mrkdwn",
+              "text": "$SCAN_SUMMARY"
+            }
+          }
+        ]
+      }
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+  - run:
+      name: Install Syft << parameters.syft_version >>
+      command: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin << parameters.syft_version >>
+  - run:
+      name: Install Grype << parameters.grype_version >>
+      command: |
+        curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sudo sh -s -- -b /usr/local/bin << parameters.grype_version >>
+  - run:
+      name: Scan Docker images
+      command: |
+        SCAN_DIR=$(mktemp -d -t vulnscan-XXXXXXXXXX); IMAGE_FILE="<< parameters.image_file >>"
+        if [ -z $IMAGE_FILE ]; then
+          IMAGE_FILE="$SCAN_DIR/image_file.txt"
+          echo "<< parameters.images >>" | tr " " "\n" > $IMAGE_FILE
+        fi
+        IMAGES_TO_SCAN=$(cat $IMAGE_FILE | grep . | wc -l); SCANNED_IMAGES=$IMAGES_TO_SCAN
+        echo ", <$CIRCLE_BUILD_URL|Complete Report>" > << parameters.scan_summary_file >>
+        echo -e "<< parameters.scan_summary_template >>" > $SCAN_DIR/scan_summary_template.tmpl
+        while read -r image || [[ -n $image ]]; do
+            [ -z $image ] && continue
+            printf "=%.0s" {1..30}; echo -n " Analysing $image "; printf "=%.0s" {1..30}; printf "\n"
+            OUT=$SCAN_DIR/$(echo $image | sed -r 's/\//_/g')
+            SCAN_ARG=$OUT.cdx.json
+            echo "$(date +"%T %D") - Generating SBOM"
+            syft $image -q -o cyclonedx-json --scope Squashed --file $SCAN_ARG || SCANNED_IMAGES=$((SCANNED_IMAGES - 1))
+            echo "$(date +"%T %D") - Scanning vulnerabilities"
+            [[ ! -f "$SCAN_ARG" ]] && SCAN_ARG=$image
+            grype $SCAN_ARG -q --by-cve --only-fixed || true
+            grype $SCAN_ARG -q --by-cve --only-fixed -o template -t $SCAN_DIR/scan_summary_template.tmpl >> << parameters.scan_summary_file >> || true
+            printf "=%.0s" {1..100}; printf "\n\n"
+        done < $IMAGE_FILE
+        SCAN_OVERVIEW="Scanned $SCANNED_IMAGES of $IMAGES_TO_SCAN images"; echo "$SCAN_OVERVIEW"
+        sed -i "1s/^/$SCAN_OVERVIEW/" << parameters.scan_summary_file >>
+        SCAN_SUMMARY=$(cat << parameters.scan_summary_file >>)
+        if [ ${#SCAN_SUMMARY} -gt << parameters.notify_message_max_size >> ]; then
+          CROP_INFO="\n Report truncated due to message size limit. See the full report <$CIRCLE_BUILD_URL|here>."
+          CROP_SIZE=$((<< parameters.notify_message_max_size >> - ${#CROP_INFO}))
+          SCAN_SUMMARY="${SCAN_SUMMARY:0:$CROP_SIZE}${CROP_INFO}"
+        fi
+        echo "export SCAN_SUMMARY='$SCAN_SUMMARY'" >> $BASH_ENV
+  - when:
+      condition: << parameters.persist_to_workspace >>
+      steps:
+        - persist_to_workspace:
+            root: ~/workdir
+            paths:
+              - '*'
+  - when:
+      condition: << parameters.notify_slack >>
+      steps:
+        - slack/notify:
+            event: always
+            channel: << parameters.notify_channel >>
+            mentions: << parameters.notify_mentions >>
+            custom: << parameters.notification_template >>
