@@ -134,7 +134,7 @@ steps:
         sed -i "1s/^/$SCAN_OVERVIEW/" << parameters.scan_summary_file >>
         SCAN_SUMMARY=$(cat << parameters.scan_summary_file >>)
         if [ ${#SCAN_SUMMARY} -gt << parameters.notify_message_max_size >> ]; then
-          CROP_INFO="\nReport truncated due to message size limit. See the full report <$CIRCLE_BUILD_URL|here>."
+          CROP_INFO="$'\n'Report truncated due to message size limit. See the full report <$CIRCLE_BUILD_URL|here>."
           CROP_SIZE=$((<< parameters.notify_message_max_size >> - ${#CROP_INFO}))
           SCAN_SUMMARY="${SCAN_SUMMARY:0:$CROP_SIZE}${CROP_INFO}"
         fi
