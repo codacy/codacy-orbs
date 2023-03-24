@@ -29,6 +29,12 @@ parameters:
 executor: versioning
 
 steps:
+  - run:
+      name: Update github.com host keys
+      command: |
+        ssh-keygen -R github.com
+        curl -L https://api.github.com/meta | jq -r '.ssh_keys | .[]' | sed -e 's/^/github.com /' >> ~/.ssh/known_hosts
+
   - checkout
 
   - run:
@@ -65,6 +71,7 @@ steps:
             command: git submodule update --init --recursive
 
   - persist_to_workspace:
-      root: ~/workdir
+      root: ~/
       paths:
-        - '*'
+        - 'workdir/*'
+        - '.ssh/known_hosts'
