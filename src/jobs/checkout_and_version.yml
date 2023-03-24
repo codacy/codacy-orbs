@@ -73,7 +73,6 @@ steps:
             command: git submodule update --init --recursive
 
   - persist_to_workspace:
-      root: ~/
+      root: ~/workdir
       paths:
-        - 'workdir/*'
-        - '.ssh/known_hosts'
+        - '*'
