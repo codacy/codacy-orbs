@@ -29,6 +29,12 @@ parameters:
 executor: versioning
 
 steps:
+  - run:
+      name: Update github.com host keys
+      command: |
+        ssh-keygen -R github.com
+        curl -L https://api.github.com/meta | jq -r '.ssh_keys | .[]' | sed -e 's/^/github.com /' >> ~/.ssh/known_hosts
+
   - checkout
 
   - run:
@@ -68,3 +74,4 @@ steps:
       root: ~/workdir
       paths:
         - '*'
+        - '../.ssh/known_hosts'
