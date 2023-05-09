@@ -38,6 +38,10 @@ parameters:
     description: "Slack handles to mention on the failure notification"
     type: string
     default: ''
+  reset_dev_env_replica_count:
+    description: "Resets the replica count of each deployment in the specified dev env"
+    type: string
+    default: ''
 
 executor: aws
 
@@ -91,3 +95,16 @@ steps:
             channel: << parameters.notify_channel >>
             template: success_tagged_deploy_1
 
+  - when:
+      condition: << parameters.reset_dev_env_replica_count>>
+      steps:
+        - run_aws:
+            cmd_name: Reset the replica count of each deployment for the specified env
+            deploy: false
+            cmd: |
+              DEPLOYMENTS=$(helm ls -n << parameters.reset_dev_env_replica_count>> -o json | jq -r '.[].name' | grep -v 'ingress\|ragnaros\|codacy-seed')
+              for DEPLOYMENT in $DEPLOYMENTS ; do
+                REPLICA_COUNT=$(helm get values -n << parameters.reset_dev_env_replica_count>> -o json $DEPLOYMENT | jq -r '.replicaCount')
+                echo "Scaling deployment $DEPLOYMENT to replica count $REPLICA_COUNT"
+                kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n << parameters.reset_dev_env_replica_count>>
+              done
