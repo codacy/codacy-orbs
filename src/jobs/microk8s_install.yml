@@ -67,6 +67,7 @@ steps:
   - run:
       name: Install microk8s and addon dependencies
       command: |
+        sudo snap refresh
         sudo apt update && sudo apt install nfs-common -y
 
         # enable traffic forwarding, which might not be done automatically for earlier microk8s versions
