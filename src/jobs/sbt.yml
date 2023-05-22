@@ -57,6 +57,15 @@ parameters:
     description: "Use the sbt thin client"
     type: boolean
     default: false
+  setup_docker_scout:
+    description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
+    type: boolean
+    default: false
+  docker_scout_version:
+    description: "Version of the docker scout plugin to use"
+    type: string
+    default: "0.13.1"
+
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -74,6 +83,17 @@ steps:
               wget https://repo.scala-sbt.org/scalasbt/debian/sbt-<< parameters.install_sbt_version >>.deb
               sudo dpkg -i sbt-<< parameters.install_sbt_version >>.deb
               rm -f sbt-<< parameters.install_sbt_version >>.deb
+  - when:
+      condition: << parameters.setup_docker_scout >>
+      steps:
+        - run:
+            name: Download and install docker scout << parameters.docker_scout_version >>
+            command: |
+              curl -L https://github.com/docker/scout-cli/releases/download/v<< parameters.docker_scout_version >>/docker-scout_<< parameters.docker_scout_version  >>_linux_amd64.tar.gz -o docker-scout.tar.gz
+              mkdir -p $HOME/.docker/cli-plugins
+              tar -xvzf docker-scout.tar.gz -C $HOME/.docker/cli-plugins
+              chmod +x $HOME/.docker/cli-plugins/docker-scout
+
   - run:
       name: Setup AWS Credentials
       command: |
