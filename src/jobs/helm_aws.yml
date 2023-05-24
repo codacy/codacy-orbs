@@ -42,6 +42,10 @@ parameters:
     description: "Resets the replica count of each deployment in the specified dev env"
     type: string
     default: ''
+  scale_environment_down:
+    description: "If the environment should be scaled down when using the reset_dev_env_replica_count parameter"
+    type: boolean
+    default: false
 
 executor: aws
 
@@ -107,7 +111,11 @@ steps:
                 for RELEASE in $RELEASES ; do
                   DEPLOYMENTS=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name')
                   for DEPLOYMENT in $DEPLOYMENTS ; do
-                    REPLICA_COUNT=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r ". | select( (.kind == \"Deployment\") and (.metadata.name ==\"$DEPLOYMENT\") ) | .spec.replicas" )
+                    if [ << parameters.scale_environment_down >> = true ]; then
+                      REPLICA_COUNT=0
+                    else
+                      REPLICA_COUNT=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r ". | select( (.kind == \"Deployment\") and (.metadata.name ==\"$DEPLOYMENT\") ) | .spec.replicas" )
+                    fi
                     kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n << parameters.reset_dev_env_replica_count >>
                   done
                 done
