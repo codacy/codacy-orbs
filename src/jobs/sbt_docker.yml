@@ -41,6 +41,14 @@ parameters:
     description: "Setup remote docker to run docker commands"
     type: boolean
     default: true
+  setup_docker_scout:
+    description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
+    type: boolean
+    default: false
+  docker_scout_version:
+    description: "Version of the docker scout plugin to use"
+    type: string
+    default: "0.13.1"
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -70,6 +78,17 @@ steps:
       steps:
         - setup_remote_docker:
             version: 20.10.14
+  - when:
+      condition: << parameters.setup_docker_scout >>
+      steps:
+        - run:
+            name: Download and install docker scout << parameters.docker_scout_version >>
+            command: |
+              curl -L https://github.com/docker/scout-cli/releases/download/v<< parameters.docker_scout_version >>/docker-scout_<< parameters.docker_scout_version  >>_linux_amd64.tar.gz -o docker-scout.tar.gz
+              mkdir -p $HOME/.docker/cli-plugins
+              tar -xvzf docker-scout.tar.gz -C $HOME/.docker/cli-plugins
+              chmod +x $HOME/.docker/cli-plugins/docker-scout
+
   - sbt_cached:
       steps: << parameters.steps >>
       steps_before_sbt: << parameters.steps_before_sbt >>
