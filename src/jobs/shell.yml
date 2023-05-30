@@ -1,6 +1,10 @@
 description: "A default job executed in the shell"
 
 parameters:
+  steps:
+    description: "Steps to run"
+    type: steps
+    default: []
   cmd:
     description: "The command to run"
     type: string
@@ -14,9 +18,16 @@ executor: machine
 steps:
   - attach_workspace:
       at: ~/workdir
-  - run:
-      name: Shell command - << parameters.cmd >>
-      command: << parameters.cmd >>
+  - when:
+      condition: <<parameters.steps>>
+      steps:
+        - <<parameters.steps>>
+  - when:
+      condition: <<parameters.cmd>>
+      steps:
+        - run:
+            name: Shell command - << parameters.cmd >>
+            command: << parameters.cmd >>
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:
