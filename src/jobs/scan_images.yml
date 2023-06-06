@@ -13,11 +13,11 @@ parameters:
   syft_version:
     description: Syft version to install.
     type: string
-    default: v0.74.0
+    default: v0.83.0
   grype_version:
     description: Grype version to install.
     type: string
-    default: v0.59.0
+    default: v0.62.3
   images:
     description: |
       Sequence of Docker image tags to scan, each separated by whitespace.
