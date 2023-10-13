@@ -1,4 +1,4 @@
-description: Checkout and write the version file
+description: Checkout and write the current and previous version files
 
 parameters:
   write_sbt_version:
@@ -46,6 +46,14 @@ steps:
   - run:
       name: Current version
       command: cat .version
+
+  - run:
+      name: Set previous version
+      command: /bin/git-version --previous-version --dev-branch "<<parameters.dev_branch>>" --release-branch "<<parameters.release_branch>>" --version-prefix "<<parameters.version_prefix>>" > .previous_version
+
+  - run:
+      name: Previous version
+      command: cat .previous_version
 
   - when:
       condition: <<parameters.write_sbt_version>>
