@@ -29,14 +29,7 @@ parameters:
 executor: versioning
 
 steps:
-  - run:
-      name: Update github.com host keys
-      command: |
-        apk --upgrade --no-cache add openssh-keygen curl jq
-        mkdir -p ~/.ssh
-        if [ -f .ssh/known_hosts ] ; then ssh-keygen -R github.com ; fi
-        curl -L https://api.github.com/meta | jq -r '.ssh_keys | .[]' | sed -e 's/^/github.com /' >> ~/.ssh/known_hosts
-
+  
   - checkout
 
   - run:
