@@ -106,20 +106,15 @@ steps:
             cmd_name: Reset the replica count of each deployment for the specified env
             deploy: false
             cmd: |
-              if [[ "<< parameters.reset_dev_env_replica_count >>" =~ ^dev-env.* ]]; then
-                RELEASES=$(helm ls -n << parameters.reset_dev_env_replica_count >> -o json | jq -r '.[].name' | grep -v 'ingress\|ragnaros\|codacy-seed')
-                for RELEASE in $RELEASES ; do
-                  DEPLOYMENTS=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name')
-                  for DEPLOYMENT in $DEPLOYMENTS ; do
-                    if [ << parameters.scale_environment_down >> = true ]; then
-                      REPLICA_COUNT=0
-                    else
-                      REPLICA_COUNT=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r ". | select( (.kind == \"Deployment\") and (.metadata.name ==\"$DEPLOYMENT\") ) | .spec.replicas" )
-                    fi
-                    kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n << parameters.reset_dev_env_replica_count >>
-                  done
+              RELEASES=$(helm ls -n << parameters.reset_dev_env_replica_count >> -o json | jq -r '.[].name' | grep -v 'ingress\|ragnaros\|codacy-seed')
+              for RELEASE in $RELEASES ; do
+                DEPLOYMENTS=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name')
+                for DEPLOYMENT in $DEPLOYMENTS ; do
+                  if [ << parameters.scale_environment_down >> = true ]; then
+                    REPLICA_COUNT=0
+                  else
+                    REPLICA_COUNT=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r ". | select( (.kind == \"Deployment\") and (.metadata.name ==\"$DEPLOYMENT\") ) | .spec.replicas" )
+                  fi
+                  kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n << parameters.reset_dev_env_replica_count >>
                 done
-              else
-                echo "The reset_dev_env_replica_count parameter must start with dev-env"
-                exit 1
-              fi
+              done
