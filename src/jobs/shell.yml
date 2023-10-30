@@ -8,6 +8,7 @@ parameters:
   cmd:
     description: "The command to run"
     type: string
+    default: ""
   persist_to_workspace:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
