@@ -27,4 +27,4 @@ steps:
   - run:
       name: Wait for running pipelines
       command: |
-        /scripts/wait_for_workflows.py -k $CIRCLE_TOKEN -w $CIRCLE_WORKFLOW_ID -p <<parameters.project_slug>> -b <<parameters.branch>> -t <<parameters.timeout>> -s <<parameters.sleep>>
+        /scripts/wait_for_workflows.py -k "$CIRCLE_TOKEN" -w "$CIRCLE_WORKFLOW_ID" -p <<parameters.project_slug>> -b <<parameters.branch>> -t <<parameters.timeout>> -s <<parameters.sleep>>
