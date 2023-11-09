@@ -50,6 +50,10 @@ parameters:
     description: "Checks for time to see if it is safe to scale down"
     type: string
     default: ''
+  wait_for_pods_ready:
+    description: "If the script should wait for the pods to be ready before completing the execution"
+    type: boolean
+    default: false
 
 executor: aws
 
@@ -134,4 +138,7 @@ steps:
                     kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n << parameters.reset_dev_env_replica_count >>
                   done
                 done
+              fi
+              if [[ << parameters.wait_for_pods_ready >> = true ]]; then
+                kubectl wait --for=condition=ready --field-selector=status.phase!=Succeeded pod --all -n $NAMESPACE
               fi
