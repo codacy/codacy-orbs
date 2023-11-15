@@ -54,6 +54,10 @@ parameters:
     description: "If the script should wait for the pods to be ready before completing the execution"
     type: boolean
     default: false
+  wait_for_pods_ready_timeout:
+    description: "The timeout used when waiting for pods to be ready"
+    type: string
+    default: '10m'
 
 executor: aws
 
@@ -126,19 +130,20 @@ steps:
                 echo "The AWS profile is set to 'production'. Exiting..."
                 exit 1
               else
-                RELEASES=$(helm ls -n << parameters.reset_dev_env_replica_count >> -o json | jq -r '.[].name' | grep -v 'ingress\|ragnaros\|codacy-seed')
+                NAMESPACE="<<parameters.reset_dev_env_replica_count>>"
+                RELEASES=$(helm ls -n $NAMESPACE -o json | jq -r '.[].name' | grep -v 'ingress\|ragnaros\|codacy-seed')
                 for RELEASE in $RELEASES ; do
-                  DEPLOYMENTS=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name' | sort -r)
+                  DEPLOYMENTS=$(helm get manifest -n $NAMESPACE $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name' | sort -r)
                   for DEPLOYMENT in $DEPLOYMENTS ; do
                     if [ << parameters.scale_environment_down >> = true ]; then
                       REPLICA_COUNT=0
                     else
-                      REPLICA_COUNT=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r ". | select( (.kind == \"Deployment\") and (.metadata.name ==\"$DEPLOYMENT\") ) | .spec.replicas" )
+                      REPLICA_COUNT=$(helm get manifest -n $NAMESPACE $RELEASE | yq eval -o json | jq -r ". | select( (.kind == \"Deployment\") and (.metadata.name ==\"$DEPLOYMENT\") ) | .spec.replicas" )
                     fi
-                    kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n << parameters.reset_dev_env_replica_count >>
+                    kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n $NAMESPACE
+                    if [[ << parameters.wait_for_pods_ready >> = true ]]; then
+                      kubectl wait --for=condition=ready --field-selector=status.phase!=Succeeded pod -l="app.kubernetes.io/name=$DEPLOYMENT" -n $NAMESPACE --timeout=<< parameters.wait_for_pods_ready_timeout >>
+                    fi
                   done
                 done
-              fi
-              if [[ << parameters.wait_for_pods_ready >> = true ]]; then
-                kubectl wait --for=condition=ready --field-selector=status.phase!=Succeeded pod --all -n $NAMESPACE
               fi
