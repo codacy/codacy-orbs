@@ -126,16 +126,17 @@ steps:
                 echo "The AWS profile is set to 'production'. Exiting..."
                 exit 1
               else
-                RELEASES=$(helm ls -n << parameters.reset_dev_env_replica_count >> -o json | jq -r '.[].name' | grep -v 'ingress\|ragnaros\|codacy-seed')
+                NAMESPACE="<<parameters.reset_dev_env_replica_count>>"
+                RELEASES=$(helm ls -n $NAMESPACE -o json | jq -r '.[].name' | grep -v 'ingress\|ragnaros\|codacy-seed')
                 for RELEASE in $RELEASES ; do
-                  DEPLOYMENTS=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name' | sort -r)
+                  DEPLOYMENTS=$(helm get manifest -n $NAMESPACE $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name' | sort -r)
                   for DEPLOYMENT in $DEPLOYMENTS ; do
                     if [ << parameters.scale_environment_down >> = true ]; then
                       REPLICA_COUNT=0
                     else
-                      REPLICA_COUNT=$(helm get manifest -n << parameters.reset_dev_env_replica_count >> $RELEASE | yq eval -o json | jq -r ". | select( (.kind == \"Deployment\") and (.metadata.name ==\"$DEPLOYMENT\") ) | .spec.replicas" )
+                      REPLICA_COUNT=$(helm get manifest -n $NAMESPACE $RELEASE | yq eval -o json | jq -r ". | select( (.kind == \"Deployment\") and (.metadata.name ==\"$DEPLOYMENT\") ) | .spec.replicas" )
                     fi
-                    kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n << parameters.reset_dev_env_replica_count >>
+                    kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n $NAMESPACE
                   done
                 done
               fi
