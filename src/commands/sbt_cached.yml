@@ -86,14 +86,21 @@ steps:
             command: |
               #!/bin/bash
 
+              seconds=0
               while ! ls .bsp/sbt.json 2> /dev/null ;
               do
                   if [ -f .sbt-failed-to-start ]; then
                     echo "sbt failed to start"
                     exit 1
                   fi
-                  sleep 1
+                  max_seconds=50
+                  if [ $seconds -gt $max_seconds ]; then
+                    echo "sbt didn't start in $max_seconds seconds. timing out."
+                    exit 1
+                  fi
                   echo "Waiting for sbt to start..."
+                  sleep 1
+                  seconds=$((seconds+1))
               done
 
               echo "sbt is ready"
