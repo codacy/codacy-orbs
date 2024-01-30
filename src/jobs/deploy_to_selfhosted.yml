@@ -69,7 +69,7 @@ steps:
         password=$(cat terraform_outputs.json | jq -r '.db_cluster_password | .value')
         sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-selfhosted.yaml
         sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-production.yaml
-  - deploy:
+  - run_skip_ssh:
       name: Install component
       command: |
         if [ -z "<< parameters.release_name >>" ] ; then

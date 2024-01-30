@@ -41,7 +41,7 @@ steps:
   - attach_workspace:
       at: ~/workdir
 
-  - deploy:
+  - run_skip_ssh:
       name: Push to charts museum
       command: |
         export TMP_DIR_PATH=$(mktemp -d)

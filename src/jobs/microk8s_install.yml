@@ -163,7 +163,7 @@ steps:
         << parameters.microk8s_values_content >>
         END_VALUES
 
-  - deploy:
+  - run_skip_ssh:
       name: Install to microk8s from chart repo
       command: |
         sudo helm repo add default << parameters.helm_repo >>
@@ -188,7 +188,7 @@ steps:
   - when:
       condition: << parameters.helm_test >>
       steps:
-        - deploy:
+        - run_skip_ssh:
             name: Test installation
             command: |
               if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then

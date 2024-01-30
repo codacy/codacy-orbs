@@ -38,12 +38,12 @@ steps:
   - when:
       condition: << parameters.force >>
       steps:
-        - deploy:
+        - run_skip_ssh:
             name: Tag
             command: git tag --force << parameters.version >> && git push --force --tags
   - unless:
       condition: << parameters.force >>
       steps:
-        - deploy:
+        - run_skip_ssh:
             name: Tag
             command: git tag << parameters.version >> && git push --tags

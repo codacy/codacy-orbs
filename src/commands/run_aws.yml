@@ -44,9 +44,14 @@ steps:
   - when:
       condition: << parameters.deploy >>
       steps:
-        - deploy:
+        - run:
             name: << parameters.cmd_name >>
-            command: << parameters.cmd >>
+            command: |
+              if [[ $(netstat -tnlp | grep -F 'circleci-agent') ]] ; then
+                echo "Command skipped during 'Rerun job with SSH'"
+                exit 0;
+              fi
+              << parameters.cmd >>
   - unless:
       condition: << parameters.deploy >>
       steps:

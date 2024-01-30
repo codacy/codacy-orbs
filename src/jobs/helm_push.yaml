@@ -47,7 +47,7 @@ steps:
         fi
         git --no-pager diff --no-color
 
-  - deploy:
+  - run_skip_ssh:
       name: Push to charts museum
       command: |
         helm dep up ${HELM_DIR}/${CHART_NAME}
