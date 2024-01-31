@@ -43,7 +43,7 @@ steps:
 
   - run_skip_ssh:
       name: Push to charts museum
-      cmd: |
+      command: |
         export TMP_DIR_PATH=$(mktemp -d)
         helm pull -d ${TMP_DIR_PATH} --repo << parameters.source_charts_repo_url >> << parameters.chart_name >> --version << parameters.source_version >>
         helm cm-push ${TMP_DIR_PATH}/*.tgz << parameters.target_charts_repo_url >> -u "<< parameters.target_charts_repo_user >>" -p "<< parameters.target_charts_repo_pass >>" -v  "<< parameters.target_version >>"

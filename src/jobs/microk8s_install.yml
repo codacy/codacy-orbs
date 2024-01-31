@@ -165,7 +165,7 @@ steps:
 
   - run_skip_ssh:
       name: Install to microk8s from chart repo
-      cmd: |
+      command: |
         sudo helm repo add default << parameters.helm_repo >>
         sudo helm repo update
         sudo microk8s.kubectl create namespace << parameters.namespace >>
@@ -190,7 +190,7 @@ steps:
       steps:
         - run_skip_ssh:
             name: Test installation
-            cmd: |
+            command: |
               if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
                 sudo helm test << parameters.chart_name >>
               else

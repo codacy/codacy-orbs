@@ -40,10 +40,10 @@ steps:
       steps:
         - run_skip_ssh:
             name: Tag
-            cmd: git tag --force << parameters.version >> && git push --force --tags
+            command: git tag --force << parameters.version >> && git push --force --tags
   - unless:
       condition: << parameters.force >>
       steps:
         - run_skip_ssh:
             name: Tag
-            cmd: git tag << parameters.version >> && git push --tags
+            command: git tag << parameters.version >> && git push --tags

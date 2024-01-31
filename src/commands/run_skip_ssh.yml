@@ -23,7 +23,7 @@ parameters:
     type: string
     description: "Specify when to enable or disable the step. Takes values: always, on_success, on_fail"
     default: "on_success"
-  cmd:
+  command:
     description: "Command to run"
     type: string
 
@@ -39,4 +39,4 @@ steps:
           echo "Command skipped during 'Rerun job with SSH'"
           exit 0;
         fi
-        << parameters.cmd >>
+        << parameters.command >>
