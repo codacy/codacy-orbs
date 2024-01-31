@@ -11,7 +11,7 @@ references:
 
   lint_job: &lint_job
     docker:
-      - image: python/python:3.10.13-alpine3.19
+      - image: python:3.10.13-alpine3.19
     working_directory: ~/workdir
 
 jobs:
