@@ -164,7 +164,7 @@ steps:
         END_VALUES
 
   - run_skip_ssh:
-      name: Install to microk8s from chart repo
+      cmd_name: Install to microk8s from chart repo
       cmd: |
         sudo helm repo add default << parameters.helm_repo >>
         sudo helm repo update
@@ -189,7 +189,7 @@ steps:
       condition: << parameters.helm_test >>
       steps:
         - run_skip_ssh:
-            name: Test installation
+            cmd_name: Test installation
             cmd: |
               if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
                 sudo helm test << parameters.chart_name >>

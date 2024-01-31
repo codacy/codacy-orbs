@@ -3,7 +3,7 @@ description: >
   Similar to CircleCI step 'deploy', futurely deprecated. Not all 'run' are available.
 
 parameters:
-  name:
+  cmd_name:
     type: string
     description: "Step name"
     default: "Executing skippable run step"
@@ -13,7 +13,7 @@ parameters:
 
 steps:
   - run:
-      name: << parameters.name >>
+      name: << parameters.cmd_name >>
       command: |
         if [[ $(netstat -tnlp | grep -F 'circleci-agent') ]] ; then
           echo "Command skipped during 'Rerun job with SSH'"

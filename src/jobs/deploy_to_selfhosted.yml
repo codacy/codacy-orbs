@@ -70,7 +70,7 @@ steps:
         sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-selfhosted.yaml
         sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-production.yaml
   - run_skip_ssh:
-      name: Install component
+      cmd_name: Install component
       cmd: |
         if [ -z "<< parameters.release_name >>" ] ; then
           RELEASE_NAME="<< parameters.chart_name >>"
