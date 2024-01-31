@@ -1,6 +1,6 @@
 description: >
   Execute a 'run' step that should be skipped during 'Rerun job with SSH'.
-  Similar to CircleCI step 'deploy', futurely deprecated. Not all 'run' are available.
+  Similar to CircleCI step 'deploy', futurely deprecated, but exposing less arguments.
 
 parameters:
   cmd_name:
