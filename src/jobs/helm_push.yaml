@@ -49,7 +49,7 @@ steps:
 
   - run_skip_ssh:
       name: Push to charts museum
-      command: |
+      cmd: |
         helm dep up ${HELM_DIR}/${CHART_NAME}
 
         echo "Adding '<< parameters.charts_repo_url >>'"
