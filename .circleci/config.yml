@@ -43,7 +43,6 @@ jobs:
               echo "Command skipped during 'Rerun job with SSH'"
               exit 0;
             fi
-            << parameters.command >>
             circleci orb publish orb.yml codacy/base@dev:$(cat .version) --token $CIRCLE_TOKEN
 
   publish_prod:
@@ -58,7 +57,6 @@ jobs:
               echo "Command skipped during 'Rerun job with SSH'"
               exit 0;
             fi
-            << parameters.command >>
             circleci orb publish orb.yml codacy/base@$(cat .version) --token $CIRCLE_TOKEN
 
   lint:
