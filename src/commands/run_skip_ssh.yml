@@ -3,7 +3,7 @@ description: >
   Similar to CircleCI step 'deploy', futurely deprecated. Not all 'run' are available.
 
 parameters:
-  cmd_name:
+  name:
     type: string
     description: "Step name"
     default: "Executing skippable run step"
