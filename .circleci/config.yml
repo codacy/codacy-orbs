@@ -82,7 +82,7 @@ jobs:
             EOF
       - run:
           name: yamllint
-          command: yamllint .
+          command: python -m yamllint .
 
 workflows:
 
