@@ -116,7 +116,7 @@ steps:
       steps:
         - run:
             name: << parameters.cmd_name >>
-            no_output_timeout:  << parameters.no_output_timeout >>
+            no_output_timeout: << parameters.no_output_timeout >>
             command: << parameters.cmd >>
   - when:
       condition:
@@ -126,7 +126,7 @@ steps:
       steps:
         - run:
             name: SBT command - << parameters.cmd >>
-            no_output_timeout:  << parameters.no_output_timeout >>
+            no_output_timeout: << parameters.no_output_timeout >>
             command: << parameters.cmd >>
 
   - when:

@@ -6,12 +6,12 @@ orbs:
 references:
   circleci_job: &circleci_job
     docker:
-      - image: circleci/circleci-cli:0.1.5879
+      - image: circleci/circleci-cli:0.1.29936
     working_directory: ~/workdir
 
   lint_job: &lint_job
     docker:
-      - image: singapore/lint-condo@sha256:b5edd1f14371b18d4446adc032348663acae8e6c65d0052a74d6ee1feb246107
+      - image: python:3.10.13-alpine3.19
     working_directory: ~/workdir
 
 jobs:
@@ -36,38 +36,51 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/workdir
-      - deploy:
+      - run:
           name: Publish orb as dev (deleted after 90 days)
-          command: circleci orb publish orb.yml codacy/base@dev:$(cat .version) --token $CIRCLE_TOKEN
+          command: |
+            if [[ $(netstat -tnlp | grep -F 'circleci-agent') ]] ; then
+              echo "Command skipped during 'Rerun job with SSH'"
+              exit 0;
+            fi
+            circleci orb publish orb.yml codacy/base@dev:$(cat .version) --token $CIRCLE_TOKEN
 
   publish_prod:
     <<: *circleci_job
     steps:
       - attach_workspace:
           at: ~/workdir
-      - deploy:
+      - run:
           name: Publish final orb
-          command: circleci orb publish orb.yml codacy/base@$(cat .version) --token $CIRCLE_TOKEN
+          command: |
+            if [[ $(netstat -tnlp | grep -F 'circleci-agent') ]] ; then
+              echo "Command skipped during 'Rerun job with SSH'"
+              exit 0;
+            fi
+            circleci orb publish orb.yml codacy/base@$(cat .version) --token $CIRCLE_TOKEN
 
   lint:
     <<: *lint_job
     steps:
       - checkout
       - run:
+          name: setup yamllint
+          command: |
+            apk add --update py3-pip
+            pip install --user yamllint
+      - run:
           name: output default .yamllint file in the working directory
           command: |
             cat \<< EOF > .yamllint
             extends: relaxed
-
             rules:
               line-length:
                 max: 200
                 allow-non-breakable-inline-mappings: true
-
             EOF
       - run:
           name: yamllint
-          command: yamllint .
+          command: python -m yamllint .
 
 workflows:
 

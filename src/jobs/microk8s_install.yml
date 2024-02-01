@@ -163,9 +163,9 @@ steps:
         << parameters.microk8s_values_content >>
         END_VALUES
 
-  - deploy:
-      name: Install to microk8s from chart repo
-      command: |
+  - run_skip_ssh:
+      cmd_name: Install to microk8s from chart repo
+      cmd: |
         sudo helm repo add default << parameters.helm_repo >>
         sudo helm repo update
         sudo microk8s.kubectl create namespace << parameters.namespace >>
@@ -188,9 +188,9 @@ steps:
   - when:
       condition: << parameters.helm_test >>
       steps:
-        - deploy:
-            name: Test installation
-            command: |
+        - run_skip_ssh:
+            cmd_name: Test installation
+            cmd: |
               if [ "$(echo <<parameters.helm_version>> | cut -f1-1 -d'.' )" == "v2" ]; then
                 sudo helm test << parameters.chart_name >>
               else
