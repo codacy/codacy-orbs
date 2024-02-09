@@ -139,6 +139,7 @@ steps:
             cache_prefix: << parameters.cache_prefix >>
             no_output_timeout: << parameters.no_output_timeout >>
             use_sbt_native_client: << parameters.use_sbt_native_client >>
+            save_cache: << parameters.save_cache >>
 
   - when:
       condition: << parameters.persist_to_workspace >>
