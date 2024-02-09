@@ -65,7 +65,10 @@ parameters:
     description: "Version of the docker scout plugin to use"
     type: string
     default: "0.13.1"
-
+  save_cache:
+    description: "Whether to save the cache or not at the end of the job"
+    type: boolean
+    default: true
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -124,6 +127,7 @@ steps:
             store_test_results_path: ~/workdir
             no_output_timeout:  << parameters.no_output_timeout >>
             use_sbt_native_client:  << parameters.use_sbt_native_client >>
+            save_cache: << parameters.save_cache >>
 
   - unless:
       condition: << parameters.store_test_results >>
