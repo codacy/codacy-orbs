@@ -47,9 +47,9 @@ steps:
         fi
         git --no-pager diff --no-color
 
-  - deploy:
-      name: Push to charts museum
-      command: |
+  - run_skip_ssh:
+      cmd_name: Push to charts museum
+      cmd: |
         helm dep up ${HELM_DIR}/${CHART_NAME}
 
         echo "Adding '<< parameters.charts_repo_url >>'"

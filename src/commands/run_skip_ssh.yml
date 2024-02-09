@@ -1,0 +1,22 @@
+description: >
+  Execute a 'run' step that should be skipped during 'Rerun job with SSH'.
+  Similar to CircleCI step 'deploy', futurely deprecated, but exposing less arguments.
+
+parameters:
+  cmd_name:
+    type: string
+    description: "Step name"
+    default: "Executing skippable run step"
+  cmd:
+    description: "Command to run"
+    type: string
+
+steps:
+  - run:
+      name: << parameters.cmd_name >>
+      command: |
+        if [[ $(netstat -tnlp | grep -F 'circleci-agent') ]] ; then
+          echo "Command skipped during 'Rerun job with SSH'"
+          exit 0;
+        fi
+        << parameters.cmd >>
