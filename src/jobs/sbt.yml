@@ -147,6 +147,7 @@ steps:
         - run:
             name: Compressing targets
             command: |
+              rm -rf targets.tar.gz
               find -name target -type d -exec tar -zcf targets.tar.gz -H posix {} + | true
               find -name target -type d -exec rm -rf {} + | true
         - persist_to_workspace:
