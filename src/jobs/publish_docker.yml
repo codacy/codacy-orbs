@@ -67,12 +67,12 @@ steps:
             command: |
               if [[ -d "target" ]] ; then
                 echo "local workspace exists, skipping"
-              elif [[ -f "$HOME/targets.tar.gz" ]] ; then
+              elif [[ -f "$HOME/targets.zip" ]] ; then
                 echo "found cache at $HOME"
-                echo "unpacking cache" && tar -xf ~/targets.tar.gz
-              elif [[ -f "./targets.tar.gz" ]] ; then
+                echo "unpacking cache" && unzip -q ~/targets.zip
+              elif [[ -f "./targets.zip" ]] ; then
                 echo "found cache at ."
-                echo "unpacking cache" && tar -xf ./targets.tar.gz
+                echo "unpacking cache" && unzip -q ~/targets.zip
               else
                 echo "no cache found"
               fi

@@ -111,8 +111,8 @@ steps:
   - run:
       name: Uncompress local targets
       command: |
-        if [[ -f "targets.tar.gz" ]]; then
-          echo "unpacking persisted workspace" && tar -xf targets.tar.gz
+        if [[ -f "targets.zip" ]]; then
+          echo "unpacking persisted workspace" && tar -xf targets.zip
         else
           echo "no persisted workspace found"
         fi
@@ -147,11 +147,11 @@ steps:
         - run:
             name: Compressing targets
             command: |
-              rm -rf targets.tar.gz
-              find -name target -type d -exec tar -zcf targets.tar.gz -H posix {} + | true
+              rm -rf targets.zip
+              find . -name target -type d -prune -print | zip -r -q -1 -@ ~/targets.zip
               find -name target -type d -exec rm -rf {} + | true
         - persist_to_workspace:
             root: ~/workdir
             paths:
               - '*'
-              - targets.tar.gz
+              - targets.zip
