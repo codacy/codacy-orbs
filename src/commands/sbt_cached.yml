@@ -93,7 +93,7 @@ steps:
                     echo "sbt failed to start"
                     exit 1
                   fi
-                  max_seconds=50
+                  max_seconds=100
                   if [ $seconds -gt $max_seconds ]; then
                     echo "sbt didn't start in $max_seconds seconds. timing out."
                     exit 1
