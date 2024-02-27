@@ -1,6 +1,8 @@
 description: "A sbt job using the Docker executor"
 
-executor: jdk
+executor:
+  name: jdk
+  tag: '<< parameters.jdk_executor_version >>'
 
 parameters:
   steps:
@@ -33,6 +35,10 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
+  jdk_executor_version:
+    description: "Override JDK executor version"
+    type: string
+    default: "8.0.322"
   use_sbt_native_client:
     description: "Use the sbt thin client"
     type: boolean

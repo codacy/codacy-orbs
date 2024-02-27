@@ -1,7 +1,14 @@
 description: >
-  A docker image to use JDK 8
+  Docker image to use JDK
 
 docker:
-  - image: cimg/openjdk:8.0.322
+  - image: 'cimg/openjdk:<< parameters.tag >>'
+
+parameters:
+  tag:
+    description: >
+      OpenJDK image version tag
+    type: string
+    default: '8.0.322'
 
 working_directory: ~/workdir
