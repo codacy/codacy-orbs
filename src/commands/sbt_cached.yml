@@ -136,7 +136,11 @@ steps:
             path: << parameters.store_test_results_path >>
 
   - when:
-      condition: <<parameters.save_cache>>
+      and:
+        - << parameters.save_cache >>
+        - equal:
+          - << pipeline.trigger_parameters.github_app.default_branch >>
+          - << pipeline.trigger_parameters.github_app.branch >>
       steps:
         - run:
             name: CleanCache
