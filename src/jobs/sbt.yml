@@ -1,9 +1,6 @@
 description: "Default sbt job"
 
-docker:
-  - image: "cimg/openjdk:<< parameters.openjdk_version >>"
-
-working_directory: ~/workdir
+executor: machine
 
 parameters:
   steps:
@@ -45,9 +42,13 @@ parameters:
     type: boolean
     default: false
   openjdk_version:
-    description: "CircleCI OpenJDK image version from https://hub.docker.com/r/cimg/openjdk/tags"
+    description: "OpenJDK major version to install. Ensure compatibility with install_sbt_version. If empty, the system one will be used"
     type: string
-    default: "8.0.402"
+    default: ""
+  install_sbt_version:
+    description: "Version of SBT to install. Ensure compatibility with openjdk_version. If empty, the system one will be used"
+    type: string
+    default: ""
   store_test_results:
     description: "Whether to upload the test results back to CircleCI"
     type: boolean
@@ -80,6 +81,27 @@ environment:
 steps:
   - attach_workspace:
       at: ~/workdir
+  - when:
+    condition: << parameters.openjdk_version >>
+    steps:
+      - run:
+          name: Install openjdk << parameters.openjdk_version >>
+          environment:
+            OJDK_VERSION: << parameters.openjdk_version >>
+          command: |
+            sudo apt update && apt install openjdk-${OJDK_VERSION}-jdk
+            sudo update-alternatives --set java /usr/lib/jvm/java-${OJDK_VERSION}-openjdk-amd64/jre/bin/java
+  - when:
+    condition: << parameters.install_sbt_version >>
+    steps:
+      - run:
+          name: Install sbt << parameters.install_sbt_version >>
+          command: |
+            # remove pre-installed sbt
+            sudo rm -rf /opt/sbt/
+            wget https://repo.scala-sbt.org/scalasbt/debian/sbt-<< parameters.install_sbt_version >>.deb
+            sudo dpkg -i sbt-<< parameters.install_sbt_version >>.deb
+            rm -f sbt-<< parameters.install_sbt_version >>.deb
   - when:
       condition: << parameters.setup_docker_scout >>
       steps:
