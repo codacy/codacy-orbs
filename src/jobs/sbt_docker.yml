@@ -3,6 +3,8 @@ description: "Sbt job using Docker executor"
 docker:
   - image: "cimg/openjdk:<< parameters.openjdk_version >>"
 
+working_directory: ~/workdir
+
 parameters:
   steps:
     description: "Steps to run"
