@@ -1,11 +1,8 @@
 description: "Default sbt job"
 
-executor: sbt_jdk
-
-executors:
-  sbt_jdk:
-    jdk:
-      tag: "<< parameters.openjdk_version >>"
+executor:
+  docker:
+    - image: "cimg/openjdk:<< parameters.openjdk_version >>"
 
 parameters:
   steps:
