@@ -1,8 +1,11 @@
 description: "Default sbt job"
 
+executor: sbt_jdk
+
 executors:
-  jdk:
-    tag: "<< parameters.openjdk_version >>"
+  sbt_jdk:
+    jdk:
+      tag: "<< parameters.openjdk_version >>"
 
 parameters:
   steps:
