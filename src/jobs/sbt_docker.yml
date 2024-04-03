@@ -35,7 +35,7 @@ parameters:
     type: boolean
     default: false
   openjdk_version:
-    description: "CircleCI OpenJDK image version"
+    description: "CircleCI OpenJDK image version from https://hub.docker.com/r/cimg/openjdk/tags"
     type: string
     default: "8.0.402"
   use_sbt_native_client:
