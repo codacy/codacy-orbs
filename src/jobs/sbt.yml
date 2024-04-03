@@ -91,7 +91,7 @@ steps:
             command: |
               sudo apt update
               sudo apt install openjdk-${OJDK_VERSION}-jre
-              sudo update-alternatives --set java /usr/lib/jvm/java-${OJDK_VERSION}-openjdk-amd64/jre/bin/java
+              sudo update-alternatives --set java /usr/lib/jvm/java-${OJDK_VERSION}-openjdk-amd64/bin/java
   - when:
       condition: << parameters.install_sbt_version >>
       steps:
