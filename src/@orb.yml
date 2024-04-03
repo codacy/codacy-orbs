@@ -4,4 +4,4 @@ description: >
   Internal orb for Codacy CI pipeline
 
 orbs: # Add other orbs to use here
-  slack: circleci/slack@4.12.1
+  slack: circleci/slack@4.13.2
