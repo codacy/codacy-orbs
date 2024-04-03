@@ -8,7 +8,7 @@ parameters:
     type: steps
     default: []
   steps_before_sbt:
-    description: "Steps to run before Sbt starts"
+    description: "Steps to run before sbt starts"
     type: steps
     default: []
   cmd:
