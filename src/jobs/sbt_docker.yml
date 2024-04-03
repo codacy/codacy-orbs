@@ -47,11 +47,15 @@ parameters:
   no_output_timeout:
     description: "Time to wait for sbt command to complete without output"
     type: string
-    default: "10m"
+    default: "15m"
   setup_remote_docker:
     description: "Setup remote docker to run docker commands"
     type: boolean
     default: true
+  remote_docker_version:
+    description: "Remote docker version"
+    type: string
+    default: docker24
   setup_docker_scout:
     description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
     type: boolean
@@ -92,7 +96,7 @@ steps:
       condition: << parameters.setup_remote_docker >>
       steps:
         - setup_remote_docker:
-            version: docker24
+            version: << parameters.remote_docker_version >>
   - when:
       condition: << parameters.setup_docker_scout >>
       steps:
