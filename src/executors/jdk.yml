@@ -1,7 +1,13 @@
 description: >
-  A docker image to use JDK 8
-
-docker:
-  - image: cimg/openjdk:8.0.322
+  Docker image to use OpenJDK, includes sbt
 
 working_directory: ~/workdir
+
+docker:
+  - image: "cimg/openjdk:<< parameters.tag >>"
+
+parameters:
+  tag:
+    type: string
+    description: >
+      CircleCI OpenJDK image version tag, from https://hub.docker.com/r/cimg/openjdk/tags

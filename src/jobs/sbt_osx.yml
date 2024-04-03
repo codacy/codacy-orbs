@@ -1,4 +1,4 @@
-description: "A default sbt job"
+description: "OSX sbt job"
 
 executor: osx
 
@@ -41,6 +41,11 @@ parameters:
     description: "The folder to be persisted"
     type: string
     default: "*"
+  openjdk_version:
+    description: "OpenJDK version"
+    type: string
+    default: "8"
+
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
   AWS_DEFAULT_REGION: << parameters.region >>
@@ -51,14 +56,15 @@ steps:
   - run:
       name: Download and install sbt
       environment:
+        OJDK_VERSION: << parameters.openjdk_version >>
         HOMEBREW_NO_AUTO_UPDATE: 1
       command: |
-        # Pin openjdk@8
-        brew install openjdk@8
-        sudo ln -sfn /usr/local/opt/openjdk@8/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-8.jdk
-        echo 'export PATH="/usr/local/opt/openjdk@8/bin:$PATH"' >> /Users/distiller/.bash_profile
-        export CPPFLAGS="-I/usr/local/opt/openjdk@8/include"
-        # Install sbt without overriding openjdk@8
+        # Pin openjdk version << parameters.openjdk_version >>
+        brew install openjdk@${OJDK_VERSION}
+        sudo ln -sfn /usr/local/opt/openjdk@${OJDK_VERSION}/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-${OJDK_VERSION}.jdk
+        echo 'export PATH="/usr/local/opt/openjdk@${OJDK_VERSION}/bin:$PATH"' >> /Users/distiller/.bash_profile
+        export CPPFLAGS="-I/usr/local/opt/openjdk@${OJDK_VERSION}/include"
+        # Install sbt without overriding openjdk
         brew install --ignore-dependencies sbt
   - run:
       name: Setup AWS Credentials

@@ -1,6 +1,8 @@
-description: "A default sbt job"
+description: "Default sbt job"
 
-executor: machine
+executor:
+  jdk:
+    tag: "<< parameters.openjdk_version >>"
 
 parameters:
   steps:
@@ -41,14 +43,14 @@ parameters:
     description: "Whether to persist the workspace or not at the end of the job"
     type: boolean
     default: false
+  openjdk_version:
+    description: "CircleCI OpenJDK image version"
+    type: string
+    default: "8.0.402"
   store_test_results:
     description: "Whether to upload the test results back to CircleCI"
     type: boolean
     default: false
-  install_sbt_version:
-    description: "Version of SBT to install. If empty, the system one will be used"
-    type: string
-    default: ""
   no_output_timeout:
     description: "The time to wait for the command without output"
     type: string
@@ -78,15 +80,6 @@ steps:
   - attach_workspace:
       at: ~/workdir
   - when:
-      condition: << parameters.install_sbt_version >>
-      steps:
-        - run:
-            name: Download and install sbt << parameters.install_sbt_version >>
-            command: |
-              wget https://repo.scala-sbt.org/scalasbt/debian/sbt-<< parameters.install_sbt_version >>.deb
-              sudo dpkg -i sbt-<< parameters.install_sbt_version >>.deb
-              rm -f sbt-<< parameters.install_sbt_version >>.deb
-  - when:
       condition: << parameters.setup_docker_scout >>
       steps:
         - run:
@@ -96,7 +89,6 @@ steps:
               mkdir -p $HOME/.docker/cli-plugins
               tar -xvzf docker-scout.tar.gz -C $HOME/.docker/cli-plugins
               chmod +x $HOME/.docker/cli-plugins/docker-scout
-
   - run:
       name: Setup AWS Credentials
       command: |
@@ -105,10 +97,6 @@ steps:
         << parameters.credentials_file_content >>
         EOF
   - run:
-      name: Set OpenJdk
-      command: sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
-
-  - run:
       name: Uncompress local targets
       command: |
         if [[ -f "targets.tar.gz" ]]; then
@@ -116,31 +104,15 @@ steps:
         else
           echo "no persisted workspace found"
         fi
-  - when:
-      condition: << parameters.store_test_results >>
-      steps:
-        - sbt_cached:
-            steps: << parameters.steps >>
-            steps_before_sbt: << parameters.steps_before_sbt >>
-            cmd: << parameters.cmd >>
-            cache_prefix: << parameters.cache_prefix >>
-            store_test_results_path: ~/workdir
-            no_output_timeout: << parameters.no_output_timeout >>
-            use_sbt_native_client: << parameters.use_sbt_native_client >>
-            save_cache: << parameters.save_cache >>
-
-  - unless:
-      condition: << parameters.store_test_results >>
-      steps:
-        - sbt_cached:
-            steps: << parameters.steps >>
-            steps_before_sbt: << parameters.steps_before_sbt >>
-            cmd: << parameters.cmd >>
-            cache_prefix: << parameters.cache_prefix >>
-            no_output_timeout: << parameters.no_output_timeout >>
-            use_sbt_native_client: << parameters.use_sbt_native_client >>
-            save_cache: << parameters.save_cache >>
-
+  - sbt_cached:
+      steps: << parameters.steps >>
+      steps_before_sbt: << parameters.steps_before_sbt >>
+      cmd: << parameters.cmd >>
+      cache_prefix: << parameters.cache_prefix >>
+      store_test_results: << parameters.store_test_results >>
+      no_output_timeout: << parameters.no_output_timeout >>
+      use_sbt_native_client: << parameters.use_sbt_native_client >>
+      save_cache: << parameters.save_cache >>
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:

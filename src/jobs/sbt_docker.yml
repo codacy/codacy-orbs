@@ -1,6 +1,8 @@
-description: "A sbt job using the Docker executor"
+description: "Sbt job using Docker executor"
 
-executor: jdk
+executor:
+  jdk:
+    tag: "<< parameters.openjdk_version >>"
 
 parameters:
   steps:
@@ -8,15 +10,15 @@ parameters:
     type: steps
     default: []
   steps_before_sbt:
-    description: "Steps to run before Sbt starts"
+    description: "Steps to run before sbt starts"
     type: steps
     default: []
   cache_prefix:
-    description: "The prefix of cache to be used"
+    description: "Prefix of cache to use"
     type: string
     default: sbt-cache-062022
   aws_profile:
-    description: "The AWS profile to be used"
+    description: "AWS profile to be used"
     type: string
     default: "default"
   credentials_file_content:
@@ -30,13 +32,21 @@ parameters:
       source_profile = default
       role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$MAVEN_PUBLISHER_ROLE
   persist_to_workspace:
-    description: "Whether to persist the workspace or not at the end of the job"
+    description: "Whether to persist the workspace at the end of the job"
     type: boolean
     default: false
+  openjdk_version:
+    description: "CircleCI OpenJDK image version"
+    type: string
+    default: "8.0.402"
   use_sbt_native_client:
-    description: "Use the sbt thin client"
+    description: "Whether to use sbt thin client"
     type: boolean
     default: true
+  no_output_timeout:
+    description: "Time to wait for sbt command to complete without output"
+    type: string
+    default: "10m"
   setup_remote_docker:
     description: "Setup remote docker to run docker commands"
     type: boolean
@@ -81,7 +91,7 @@ steps:
       condition: << parameters.setup_remote_docker >>
       steps:
         - setup_remote_docker:
-            version: 20.10.14
+            version: docker24
   - when:
       condition: << parameters.setup_docker_scout >>
       steps:
@@ -97,7 +107,7 @@ steps:
       steps: << parameters.steps >>
       steps_before_sbt: << parameters.steps_before_sbt >>
       cache_prefix: << parameters.cache_prefix >>
-      no_output_timeout: "10m"
+      no_output_timeout: << parameters.no_output_timeout >>
       use_sbt_native_client: << parameters.use_sbt_native_client >>
       save_cache: << parameters.save_cache >>
 

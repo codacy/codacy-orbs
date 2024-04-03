@@ -14,7 +14,6 @@ usage:
 
         - codacy/sbt:
             name: test
-            install_sbt_version: 1.3.0
             cmd: sbt ;coverage;test;coverageReport;coverageAggregate;codacyCoverage
             persist_to_workspace: true
             store_test_results: true
