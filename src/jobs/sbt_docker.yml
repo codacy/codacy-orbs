@@ -1,6 +1,6 @@
 description: "Sbt job using Docker executor"
 
-executor:
+executors:
   jdk:
     tag: "<< parameters.openjdk_version >>"
 

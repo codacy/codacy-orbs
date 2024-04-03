@@ -1,6 +1,6 @@
 description: "Default sbt job"
 
-executor:
+executors:
   jdk:
     tag: "<< parameters.openjdk_version >>"
 
