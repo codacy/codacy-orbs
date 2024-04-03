@@ -53,7 +53,7 @@ parameters:
   no_output_timeout:
     description: "The time to wait for the command without output"
     type: string
-    default: "10m"
+    default: "15m"
   use_sbt_native_client:
     description: "Use the sbt thin client"
     type: boolean

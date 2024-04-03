@@ -59,7 +59,7 @@ parameters:
     type: string
     default: "0.13.1"
   save_cache:
-    description: "Whether to save the cache or not at the end of the job"
+    description: "Whether to save cache at the end of the job"
     type: boolean
     default: true
 
@@ -101,7 +101,6 @@ steps:
               mkdir -p $HOME/.docker/cli-plugins
               tar -xvzf docker-scout.tar.gz -C $HOME/.docker/cli-plugins
               chmod +x $HOME/.docker/cli-plugins/docker-scout
-
   - sbt_cached:
       steps: << parameters.steps >>
       steps_before_sbt: << parameters.steps_before_sbt >>
@@ -109,7 +108,6 @@ steps:
       no_output_timeout: << parameters.no_output_timeout >>
       use_sbt_native_client: << parameters.use_sbt_native_client >>
       save_cache: << parameters.save_cache >>
-
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:
