@@ -26,10 +26,14 @@ parameters:
     description: "The prefix of cache to be used"
     type: string
     default: sbt-cache-032020
+  store_test_results:
+    description: "Whether to upload test results to CircleCI"
+    type: boolean
+    default: false
   store_test_results_path:
-    description: "The path to search for test results to upload to CircleCI"
+    description: "Test results path for CircleCI upload"
     type: string
-    default: ""
+    default: "~/workdir"
   no_output_timeout:
     description: "The time to wait for the command without output"
     type: string
@@ -130,7 +134,7 @@ steps:
             command: << parameters.cmd >>
 
   - when:
-      condition: << parameters.store_test_results_path >>
+      condition: << parameters.store_test_results >>
       steps:
         - store_test_results:
             path: << parameters.store_test_results_path >>

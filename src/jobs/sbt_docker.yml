@@ -1,6 +1,9 @@
-description: "A sbt job using the Docker executor"
+description: "Sbt job using Docker executor"
 
-executor: jdk
+docker:
+  - image: "cimg/openjdk:<< parameters.openjdk_version >>"
+
+working_directory: ~/workdir
 
 parameters:
   steps:
@@ -8,15 +11,15 @@ parameters:
     type: steps
     default: []
   steps_before_sbt:
-    description: "Steps to run before Sbt starts"
+    description: "Steps to run before sbt starts"
     type: steps
     default: []
   cache_prefix:
-    description: "The prefix of cache to be used"
+    description: "Prefix of cache to use"
     type: string
     default: sbt-cache-062022
   aws_profile:
-    description: "The AWS profile to be used"
+    description: "AWS profile to be used"
     type: string
     default: "default"
   credentials_file_content:
@@ -30,17 +33,29 @@ parameters:
       source_profile = default
       role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$MAVEN_PUBLISHER_ROLE
   persist_to_workspace:
-    description: "Whether to persist the workspace or not at the end of the job"
+    description: "Whether to persist the workspace at the end of the job"
     type: boolean
     default: false
+  openjdk_version:
+    description: "CircleCI OpenJDK image version from https://hub.docker.com/r/cimg/openjdk/tags"
+    type: string
+    default: "8.0.402"
   use_sbt_native_client:
-    description: "Use the sbt thin client"
+    description: "Whether to use sbt thin client"
     type: boolean
     default: true
+  no_output_timeout:
+    description: "Time to wait for sbt command to complete without output"
+    type: string
+    default: "15m"
   setup_remote_docker:
     description: "Setup remote docker to run docker commands"
     type: boolean
     default: true
+  remote_docker_version:
+    description: "Remote docker version"
+    type: string
+    default: docker24
   setup_docker_scout:
     description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
     type: boolean
@@ -50,7 +65,7 @@ parameters:
     type: string
     default: "0.13.1"
   save_cache:
-    description: "Whether to save the cache or not at the end of the job"
+    description: "Whether to save cache at the end of the job"
     type: boolean
     default: true
 
@@ -64,7 +79,7 @@ steps:
   - run:
       name: Download and install sbt
       command: |
-        # get rid of the pre-installed sbt
+        # remove pre-installed sbt
         sudo rm -rf /opt/sbt/
         sbt_version=$(cat project/build.properties | grep sbt.version | sed "s/ *sbt\.version *= *//")
         wget https://repo.scala-sbt.org/scalasbt/debian/sbt-$sbt_version.deb
@@ -81,7 +96,7 @@ steps:
       condition: << parameters.setup_remote_docker >>
       steps:
         - setup_remote_docker:
-            version: 20.10.14
+            version: << parameters.remote_docker_version >>
   - when:
       condition: << parameters.setup_docker_scout >>
       steps:
@@ -92,15 +107,13 @@ steps:
               mkdir -p $HOME/.docker/cli-plugins
               tar -xvzf docker-scout.tar.gz -C $HOME/.docker/cli-plugins
               chmod +x $HOME/.docker/cli-plugins/docker-scout
-
   - sbt_cached:
       steps: << parameters.steps >>
       steps_before_sbt: << parameters.steps_before_sbt >>
       cache_prefix: << parameters.cache_prefix >>
-      no_output_timeout: "10m"
+      no_output_timeout: << parameters.no_output_timeout >>
       use_sbt_native_client: << parameters.use_sbt_native_client >>
       save_cache: << parameters.save_cache >>
-
   - when:
       condition: << parameters.persist_to_workspace >>
       steps:
