@@ -26,7 +26,14 @@ parameters:
     description: "Slack handles to mention on the failure notification"
     type: string
     default: ''
-
+  setup_remote_docker:
+    description: "Setup remote docker to run docker commands"
+    type: boolean
+    default: false
+  remote_docker_version:
+    description: "Remote docker version"
+    type: string
+    default: docker24
 
 environment:
   AWS_PROFILE: << parameters.aws_profile >>
@@ -40,6 +47,12 @@ steps:
       cmd_name: AWS deploy command - << parameters.cmd >>
       deploy: true
       cmd: << parameters.cmd >>
+
+  - when:
+      condition: << parameters.setup_remote_docker >>
+      steps:
+        - setup_remote_docker:
+            version: << parameters.remote_docker_version >>
 
   - when:
       condition: << parameters.notify_slack >>
