@@ -1,0 +1,75 @@
+description: >
+  Build, Scan and Publish docker images (versioned & specified label).
+  Image tags are obtained from both file .version and parameter 'label'.
+
+parameters:
+  service:
+    description: Name of the service to build.
+    type: string
+  label:
+    description: "Label specifying the version or env of the image."
+    type: string
+  build_steps:
+    description: Customizable build steps.
+    type: steps
+  file:
+    description: Docker file used to build the container.
+    type: string
+    default: "Dockerfile"
+  enable_docker_scout:
+    description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
+    type: boolean
+    default: true
+  docker_scout_version:
+    description: Docker scout plugin version.
+    type: string
+    default: "1.9.3"
+  docker_scout_severities:
+    description: |
+      Comma separated vulnerability severities that fail the deployment if detected by docker scout.
+    type: string
+    default: "high,critical"
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+  - when:
+      condition: << parameters.enable_docker_scout >>
+      steps:
+        - run:
+            name: Download and install docker scout << parameters.docker_scout_version >>
+            command: |
+              curl -L https://github.com/docker/scout-cli/releases/download/v<< parameters.docker_scout_version >>/docker-scout_<< parameters.docker_scout_version  >>_linux_amd64.tar.gz -o /tmp/docker-scout.tar.gz
+              mkdir -p $HOME/.docker/cli-plugins
+              tar -xvzf /tmp/docker-scout.tar.gz -C $HOME/.docker/cli-plugins
+              chmod +x $HOME/.docker/cli-plugins/docker-scout
+  - run:
+      name: Dockerhub login
+      command: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASS
+  - steps: << parameters.build_steps >>
+  - when:
+      condition: << parameters.enable_docker_scout >>
+      steps:
+        - run:
+            name: Scan docker images
+            command: |
+              docker scout cves --only-fixed --only-severity << parameters.docker_scout_severities >> --only-package-type apk,deb --exit-code codacy/<< parameters.service >>:$(cat .version)
+  - run:
+      name: Publish docker images (versioned & << parameters.label >>)
+      command: |
+        docker tag codacy/<< parameters.service >>:$(cat .version) codacy/<< parameters.service >>:<< parameters.label >>
+        docker push "codacy/<< parameters.service >>:$(cat .version)" "codacy/<< parameters.service >>:<< parameters.label >>"
+
+jobs:
+  myjob:
+    docker:
+      - image: "cimg/base:stable"
+    steps:
+      - codacy/build_and_publish_docker:
+          service: test-service
+          label: dev
+          build_steps:
+            - run:
+                name: Build docker images (versioned & << parameters.label >>)
+                command: docker build -f << parameters.file >> --build-arg GITHUB_TOKEN=$GITHUB_TOKEN -t "codacy/<< parameters.service >>:$(cat .version)" .
