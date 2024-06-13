@@ -9,9 +9,14 @@ parameters:
   label:
     description: "Label specifying the version or env of the image."
     type: string
+  before_steps:
+    description: Additional steps to run before build.
+    type: steps
+    default: []
   build_steps:
     description: Customizable build steps.
     type: steps
+    default: []
   file:
     description: Docker file used to build the container.
     type: string
@@ -47,7 +52,20 @@ steps:
       name: Dockerhub login
       command: |
         docker login -u $DOCKER_USER -p $DOCKER_PASS
-  - steps: << parameters.build_steps >>
+  - when:
+      condition: << parameters.before_steps >>
+      steps: << parameters.before_steps >>
+  - when:
+      condition: << parameters.build_steps >>
+      steps: << parameters.build_steps >>
+  - when:
+      condition:
+        not: << parameters.build_steps >>
+      steps:
+        - run:
+            name: Build docker images (versioned)
+            command: |
+              docker build -f << parameters.file >> -t "codacy/<< parameters.service >>:$(cat .version)" .
   - when:
       condition: << parameters.enable_docker_scout >>
       steps:

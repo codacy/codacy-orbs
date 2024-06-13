@@ -8,10 +8,6 @@ parameters:
     description: "Steps to run"
     type: steps
     default: []
-  cache_prefix:
-    description: "Prefix of cache to use"
-    type: string
-    default: sbt-cache-032020
   aws_profile:
     description: "AWS profile to use"
     type: string
@@ -37,14 +33,6 @@ parameters:
   go_version:
     description: "Go version to install"
     type: string
-  store_test_results:
-    description: "Whether to upload the test results to CircleCI"
-    type: boolean
-    default: false
-  no_output_timeout:
-    description: "Time to wait for command to complete without output"
-    type: string
-    default: "15m"
   setup_docker_scout:
     description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
     type: boolean
