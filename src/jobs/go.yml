@@ -1,0 +1,120 @@
+description: "Default go job"
+
+docker:
+  - image: "cimg/go:<< parameters.go_version >>"
+
+parameters:
+  steps:
+    description: "Steps to run"
+    type: steps
+    default: []
+  cache_prefix:
+    description: "Prefix of cache to use"
+    type: string
+    default: sbt-cache-032020
+  aws_profile:
+    description: "AWS profile to use"
+    type: string
+    default: "default"
+  region:
+    description: "AWS region for the deployment"
+    type: string
+    default: eu-west-1
+  credentials_file_content:
+    description: "AWS credentials file contents to grant access for the step"
+    type: string
+    default: |
+      [default]
+      aws_access_key_id=$ACCESS_KEY_ID
+      aws_secret_access_key=$SECRET_ACCESS_KEY
+      [maven]
+      source_profile = default
+      role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$MAVEN_PUBLISHER_ROLE
+  persist_to_workspace:
+    description: "Whether to persist the workspace or not at the end of the job"
+    type: boolean
+    default: false
+  go_version:
+    description: "Go version to install"
+    type: string
+  store_test_results:
+    description: "Whether to upload the test results to CircleCI"
+    type: boolean
+    default: false
+  no_output_timeout:
+    description: "Time to wait for command to complete without output"
+    type: string
+    default: "15m"
+  setup_docker_scout:
+    description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
+    type: boolean
+    default: false
+  docker_scout_version:
+    description: "Version of the docker scout plugin to use"
+    type: string
+    default: "1.9.3"
+  setup_remote_docker:
+    description: "Whether to setup remote docker to run docker commands. Disabled by default"
+    type: boolean
+    default: false
+  remote_docker_version:
+    description: "Remote docker version"
+    type: string
+    default: docker24
+
+environment:
+  AWS_PROFILE: << parameters.aws_profile >>
+  AWS_DEFAULT_REGION: << parameters.region >>
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+  - when:
+      condition: << parameters.setup_remote_docker >>
+      steps:
+        - setup_remote_docker:
+            version: << parameters.remote_docker_version >>
+  - when:
+      condition: << parameters.setup_docker_scout >>
+      steps:
+        - run:
+            name: Download and install docker scout << parameters.docker_scout_version >>
+            command: |
+              curl -L https://github.com/docker/scout-cli/releases/download/v<< parameters.docker_scout_version >>/docker-scout_<< parameters.docker_scout_version  >>_linux_amd64.tar.gz -o docker-scout.tar.gz
+              mkdir -p $HOME/.docker/cli-plugins
+              tar -xvzf docker-scout.tar.gz -C $HOME/.docker/cli-plugins
+              chmod +x $HOME/.docker/cli-plugins/docker-scout
+  - run:
+      name: Setup AWS Credentials
+      command: |
+        mkdir -p ~/.aws && touch ~/.aws/credentials
+        cat >> ~/.aws/credentials \<< EOF
+        << parameters.credentials_file_content >>
+        EOF
+  - run:
+      name: Uncompress local targets
+      command: |
+        if [[ -f "targets.tar.gz" ]]; then
+          echo "unpacking persisted workspace" && tar -xf targets.tar.gz
+        else
+          echo "no persisted workspace found"
+        fi
+  - run:
+      name: Enable Go private modules support
+      # GITHUB_TOKEN is provided by context CodacyGitHub
+      # See https://app.circleci.com/settings/organization/github/codacy/contexts/4a3d09b1-21da-4299-8e1b-541d44ec3ffb
+      command: git config --global url.https://$GITHUB_TOKEN@github.com/.insteadOf https://github.com/
+  - steps: <<parameters.steps>>
+  - when:
+      condition: << parameters.persist_to_workspace >>
+      steps:
+        - run:
+            name: Compressing targets
+            command: |
+              find -name target -type d -exec tar -zcf targets.tar.gz -H posix {} + | true
+              find -name target -type d -exec rm -rf {} + | true
+        - persist_to_workspace:
+            root: ~/workdir
+            paths:
+              - '*'
+              - targets.tar.gz

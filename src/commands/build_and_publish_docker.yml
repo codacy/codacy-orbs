@@ -60,16 +60,3 @@ steps:
       command: |
         docker tag codacy/<< parameters.service >>:$(cat .version) codacy/<< parameters.service >>:<< parameters.label >>
         docker push "codacy/<< parameters.service >>:$(cat .version)" "codacy/<< parameters.service >>:<< parameters.label >>"
-
-jobs:
-  myjob:
-    docker:
-      - image: "cimg/base:stable"
-    steps:
-      - codacy/build_and_publish_docker:
-          service: test-service
-          label: dev
-          build_steps:
-            - run:
-                name: Build docker images (versioned & << parameters.label >>)
-                command: docker build -f << parameters.file >> --build-arg GITHUB_TOKEN=$GITHUB_TOKEN -t "codacy/<< parameters.service >>:$(cat .version)" .
