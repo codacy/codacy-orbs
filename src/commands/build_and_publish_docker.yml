@@ -38,10 +38,23 @@ parameters:
       Comma separated vulnerability severities that fail the deployment if detected by docker scout.
     type: string
     default: "high,critical"
+  setup_remote_docker:
+    description: "Whether to setup remote docker to run docker commands. Disabled by default"
+    type: boolean
+    default: false
+  remote_docker_version:
+    description: "Remote docker version"
+    type: string
+    default: docker24
 
 steps:
   - attach_workspace:
       at: ~/workdir
+  - when:
+    condition: << parameters.setup_remote_docker >>
+    steps:
+      - setup_remote_docker:
+          version: << parameters.remote_docker_version >>
   - when:
       condition: << parameters.enable_docker_scout >>
       steps:
