@@ -17,6 +17,10 @@ parameters:
     description: Customizable build steps.
     type: steps
     default: []
+  build_args:
+    description: Default build step build_arg comma separated parameters, e.g. ARG1='arg1',ARG2='arg2'.
+    type: string
+    default: ""
   file:
     description: Docker file used to build the container.
     type: string
@@ -44,7 +48,7 @@ steps:
         - run:
             name: Download and install docker scout << parameters.docker_scout_version >>
             command: |
-              curl -L https://github.com/docker/scout-cli/releases/download/v<< parameters.docker_scout_version >>/docker-scout_<< parameters.docker_scout_version  >>_linux_amd64.tar.gz -o /tmp/docker-scout.tar.gz
+              curl -L https://github.com/docker/scout-cli/releases/download/v<< parameters.docker_scout_version >>/docker-scout_<< parameters.docker_scout_version >>_linux_amd64.tar.gz -o /tmp/docker-scout.tar.gz
               mkdir -p $HOME/.docker/cli-plugins
               tar -xvzf /tmp/docker-scout.tar.gz -C $HOME/.docker/cli-plugins
               chmod +x $HOME/.docker/cli-plugins/docker-scout
@@ -65,7 +69,7 @@ steps:
         - run:
             name: Build docker images (versioned)
             command: |
-              docker build -f << parameters.file >> -t "codacy/<< parameters.service >>:$(cat .version)" .
+              docker build -f << parameters.file >> -t "codacy/<< parameters.service >>:$(cat .version)" $(IFS=","; for i in << parameters.build_args >>; do echo -n "--build-arg $i "; done) .
   - when:
       condition: << parameters.enable_docker_scout >>
       steps:
