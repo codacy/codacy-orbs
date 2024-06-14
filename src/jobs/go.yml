@@ -3,6 +3,8 @@ description: "Default go job"
 docker:
   - image: "cimg/go:<< parameters.go_version >>"
 
+working_directory: ~/workdir
+
 parameters:
   steps:
     description: "Steps to run"
@@ -31,8 +33,12 @@ parameters:
     type: boolean
     default: false
   go_version:
-    description: "Go version to install"
+    description: "CircleCI Go image version from https://hub.docker.com/r/cimg/go/tags"
     type: string
+  private_repo_token:
+    description: "Private repository access token"
+    type: env_var_name
+    default: GITHUB_TOKEN
   setup_docker_scout:
     description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
     type: boolean
@@ -89,9 +95,7 @@ steps:
         fi
   - run:
       name: Enable Go private modules support
-      # GITHUB_TOKEN is provided by context CodacyGitHub
-      # See https://app.circleci.com/settings/organization/github/codacy/contexts/4a3d09b1-21da-4299-8e1b-541d44ec3ffb
-      command: git config --global url.https://$GITHUB_TOKEN@github.com/.insteadOf https://github.com/
+      command: git config --global url.https://${<< parameters.private_repo_token >>}@github.com/.insteadOf https://github.com/
   - steps: <<parameters.steps>>
   - when:
       condition: << parameters.persist_to_workspace >>
