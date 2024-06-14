@@ -51,10 +51,10 @@ steps:
   - attach_workspace:
       at: ~/workdir
   - when:
-    condition: << parameters.setup_remote_docker >>
-    steps:
-      - setup_remote_docker:
-          version: << parameters.remote_docker_version >>
+      condition: << parameters.setup_remote_docker >>
+      steps:
+        - setup_remote_docker:
+            version: << parameters.remote_docker_version >>
   - when:
       condition: << parameters.enable_docker_scout >>
       steps:
