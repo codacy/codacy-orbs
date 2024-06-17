@@ -13,6 +13,10 @@ parameters:
     description: Additional steps to run before build.
     type: steps
     default: []
+  after_steps:
+    description: Additional steps to run after build.
+    type: steps
+    default: []
   build_steps:
     description: Custom build steps.
     type: steps
@@ -69,20 +73,18 @@ steps:
       name: Dockerhub login
       command: |
         docker login -u $DOCKER_USER -p $DOCKER_PASS
-  - when:
-      condition: << parameters.before_steps >>
-      steps: << parameters.before_steps >>
+  - steps: << parameters.before_steps >>
   - when:
       condition: << parameters.build_steps >>
       steps: << parameters.build_steps >>
-  - when:
-      condition:
-        not: << parameters.build_steps >>
+  - unless:
+      condition: << parameters.build_steps >>
       steps:
         - run:
             name: Build docker images (versioned)
             command: |
               docker build -f << parameters.file >> -t "codacy/<< parameters.service >>:$(cat .version)" $(IFS=","; for i in << parameters.build_args >>; do echo -n "--build-arg $i "; done) .
+  - steps: << parameters.after_steps >>
   - when:
       condition: << parameters.enable_docker_scout >>
       steps:
