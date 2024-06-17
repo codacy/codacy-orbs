@@ -1,4 +1,5 @@
-description: "Default go job"
+description: >
+  Default go job.
 
 docker:
   - image: "cimg/go:<< parameters.go_version >>"
@@ -7,19 +8,19 @@ working_directory: ~/workdir
 
 parameters:
   steps:
-    description: "Steps to run"
+    description: Steps to run.
     type: steps
     default: []
   aws_profile:
-    description: "AWS profile to use"
+    description: AWS profile to use.
     type: string
     default: "default"
   region:
-    description: "AWS region for the deployment"
+    description: AWS region for the deployment.
     type: string
     default: eu-west-1
   credentials_file_content:
-    description: "AWS credentials file contents to grant access for the step"
+    description: AWS credentials file contents to grant access for the step.
     type: string
     default: |
       [default]
@@ -29,30 +30,30 @@ parameters:
       source_profile = default
       role_arn = arn:aws:iam::$AWS_ACCOUNT_ID_PRODUCTION:role/$MAVEN_PUBLISHER_ROLE
   persist_to_workspace:
-    description: "Whether to persist the workspace or not at the end of the job"
+    description: Whether to persist the workspace or not at the end of the job.
     type: boolean
     default: false
   go_version:
-    description: "CircleCI Go image version from https://hub.docker.com/r/cimg/go/tags"
+    description: CircleCI Go image version from https://hub.docker.com/r/cimg/go/tags.
     type: string
   private_repo_token:
-    description: "Private repository access token"
+    description: Private repository access token.
     type: env_var_name
     default: GITHUB_TOKEN
   setup_docker_scout:
-    description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
+    description: Install and setup docker scout plugin to scan for docker image vulnerabilities.
     type: boolean
     default: false
   docker_scout_version:
-    description: "Version of the docker scout plugin to use"
+    description: Docker scout plugin version.
     type: string
     default: "1.9.3"
   setup_remote_docker:
-    description: "Whether to setup remote docker to run docker commands. Disabled by default"
+    description: Whether to setup remote docker to run docker commands. Disabled by default.
     type: boolean
     default: false
   remote_docker_version:
-    description: "Remote docker version"
+    description: Remote docker version.
     type: string
     default: docker24
 

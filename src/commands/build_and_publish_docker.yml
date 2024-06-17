@@ -7,26 +7,26 @@ parameters:
     description: Name of the service to build.
     type: string
   label:
-    description: "Label specifying the version or env of the image."
+    description: Label specifying the version or environment of the image.
     type: string
   before_steps:
     description: Additional steps to run before build.
     type: steps
     default: []
   build_steps:
-    description: Customizable build steps.
+    description: Custom build steps.
     type: steps
     default: []
   build_args:
-    description: Default build step build_arg comma separated parameters, e.g. ARG1='arg1',ARG2='arg2'.
+    description: Custom build step comma separated build_arg parameters, e.g. ARG1='arg1',ARG2='arg2'.
     type: string
     default: ""
   file:
-    description: Docker file used to build the container.
+    description: Dockerfile path used to build the container.
     type: string
     default: "Dockerfile"
   enable_docker_scout:
-    description: "Install and setup docker scout plugin to scan for docker image vulnerabilities"
+    description: Use docker scout plugin to scan for docker image vulnerabilities.
     type: boolean
     default: true
   docker_scout_version:
@@ -35,15 +35,15 @@ parameters:
     default: "1.9.3"
   docker_scout_severities:
     description: |
-      Comma separated vulnerability severities that fail the deployment if detected by docker scout.
+      Comma separated vulnerability severities that should fail the deployment if detected by docker scout.
     type: string
     default: "high,critical"
   setup_remote_docker:
-    description: "Whether to setup remote docker to run docker commands. Disabled by default"
+    description: Whether to setup remote docker to run docker commands.
     type: boolean
     default: false
   remote_docker_version:
-    description: "Remote docker version"
+    description: Remote docker version.
     type: string
     default: docker24
 
