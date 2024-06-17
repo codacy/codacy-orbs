@@ -1,0 +1,97 @@
+description: >
+  Build, Scan and Publish docker images (versioned & specified label).
+  Image tags are obtained from both file .version and parameter 'label'.
+
+parameters:
+  service:
+    description: Name of the service to build.
+    type: string
+  label:
+    description: Label specifying the version or environment of the image.
+    type: string
+  before_steps:
+    description: Additional steps to run before build.
+    type: steps
+    default: []
+  build_steps:
+    description: Custom build steps.
+    type: steps
+    default: []
+  build_args:
+    description: Custom build step comma separated build_arg parameters, e.g. ARG1='arg1',ARG2='arg2'.
+    type: string
+    default: ""
+  file:
+    description: Dockerfile path used to build the container.
+    type: string
+    default: "Dockerfile"
+  enable_docker_scout:
+    description: Use docker scout plugin to scan for docker image vulnerabilities.
+    type: boolean
+    default: true
+  docker_scout_version:
+    description: Docker scout plugin version.
+    type: string
+    default: "1.9.3"
+  docker_scout_severities:
+    description: |
+      Comma separated vulnerability severities that should fail the deployment if detected by docker scout.
+    type: string
+    default: "high,critical"
+  setup_remote_docker:
+    description: Whether to setup remote docker to run docker commands.
+    type: boolean
+    default: false
+  remote_docker_version:
+    description: Remote docker version.
+    type: string
+    default: docker24
+
+steps:
+  - attach_workspace:
+      at: ~/workdir
+  - when:
+      condition: << parameters.setup_remote_docker >>
+      steps:
+        - setup_remote_docker:
+            version: << parameters.remote_docker_version >>
+  - when:
+      condition: << parameters.enable_docker_scout >>
+      steps:
+        - run:
+            name: Download and install docker scout << parameters.docker_scout_version >>
+            command: |
+              curl -L https://github.com/docker/scout-cli/releases/download/v<< parameters.docker_scout_version >>/docker-scout_<< parameters.docker_scout_version >>_linux_amd64.tar.gz -o /tmp/docker-scout.tar.gz
+              mkdir -p $HOME/.docker/cli-plugins
+              tar -xvzf /tmp/docker-scout.tar.gz -C $HOME/.docker/cli-plugins
+              chmod +x $HOME/.docker/cli-plugins/docker-scout
+  - run:
+      name: Dockerhub login
+      command: |
+        docker login -u $DOCKER_USER -p $DOCKER_PASS
+  - when:
+      condition: << parameters.before_steps >>
+      steps: << parameters.before_steps >>
+  - when:
+      condition: << parameters.build_steps >>
+      steps: << parameters.build_steps >>
+  - when:
+      condition:
+        not: << parameters.build_steps >>
+      steps:
+        - run:
+            name: Build docker images (versioned)
+            command: |
+              docker build -f << parameters.file >> -t "codacy/<< parameters.service >>:$(cat .version)" $(IFS=","; for i in << parameters.build_args >>; do echo -n "--build-arg $i "; done) .
+  - when:
+      condition: << parameters.enable_docker_scout >>
+      steps:
+        - run:
+            name: Scan docker images
+            command: |
+              docker scout cves --only-fixed --only-severity << parameters.docker_scout_severities >> --only-package-type apk,deb --exit-code codacy/<< parameters.service >>:$(cat .version)
+  - run:
+      name: Publish docker images (versioned & << parameters.label >>)
+      command: |
+        docker tag codacy/<< parameters.service >>:$(cat .version) codacy/<< parameters.service >>:<< parameters.label >>
+        docker push "codacy/<< parameters.service >>:$(cat .version)" "codacy/<< parameters.service >>:<< parameters.label >>"

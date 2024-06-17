@@ -1,0 +1,13 @@
+description: >
+  Docker image to use Go
+
+working_directory: ~/workdir
+
+docker:
+  - image: "cimg/go:<< parameters.tag >>"
+
+parameters:
+  tag:
+    type: string
+    description: >
+      CircleCI Go image version tag, from https://hub.docker.com/r/cimg/go/tags
