@@ -13,8 +13,16 @@ parameters:
     description: Additional steps to run before build.
     type: steps
     default: []
+  after_steps:
+    description: Additional steps to run after build.
+    type: steps
+    default: []
+  enable_custom_build:
+    description: Enable custom build steps.
+    type: boolean
+    default: false
   build_steps:
-    description: Custom build steps.
+    description: Custom build steps. Requires enable_custom_build as true.
     type: steps
     default: []
   build_args:
@@ -69,20 +77,18 @@ steps:
       name: Dockerhub login
       command: |
         docker login -u $DOCKER_USER -p $DOCKER_PASS
+  - steps: << parameters.before_steps >>
   - when:
-      condition: << parameters.before_steps >>
-      steps: << parameters.before_steps >>
-  - when:
-      condition: << parameters.build_steps >>
+      condition: << parameters.enable_custom_build >>
       steps: << parameters.build_steps >>
-  - when:
-      condition:
-        not: << parameters.build_steps >>
+  - unless:
+      condition: << parameters.enable_custom_build >>
       steps:
         - run:
             name: Build docker images (versioned)
             command: |
               docker build -f << parameters.file >> -t "codacy/<< parameters.service >>:$(cat .version)" $(IFS=","; for i in << parameters.build_args >>; do echo -n "--build-arg $i "; done) .
+  - steps: << parameters.after_steps >>
   - when:
       condition: << parameters.enable_docker_scout >>
       steps:
@@ -94,4 +100,5 @@ steps:
       name: Publish docker images (versioned & << parameters.label >>)
       command: |
         docker tag codacy/<< parameters.service >>:$(cat .version) codacy/<< parameters.service >>:<< parameters.label >>
-        docker push "codacy/<< parameters.service >>:$(cat .version)" "codacy/<< parameters.service >>:<< parameters.label >>"
+        docker push "codacy/<< parameters.service >>:$(cat .version)"
+        docker push "codacy/<< parameters.service >>:<< parameters.label >>"
