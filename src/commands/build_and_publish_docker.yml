@@ -100,4 +100,5 @@ steps:
       name: Publish docker images (versioned & << parameters.label >>)
       command: |
         docker tag codacy/<< parameters.service >>:$(cat .version) codacy/<< parameters.service >>:<< parameters.label >>
-        docker push "codacy/<< parameters.service >>:$(cat .version)" "codacy/<< parameters.service >>:<< parameters.label >>"
+        docker push "codacy/<< parameters.service >>:$(cat .version)"
+        docker push "codacy/<< parameters.service >>:<< parameters.label >>"
