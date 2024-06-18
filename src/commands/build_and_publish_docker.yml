@@ -17,8 +17,12 @@ parameters:
     description: Additional steps to run after build.
     type: steps
     default: []
+  enable_custom_build:
+    description: Enable custom build steps.
+    type: boolean
+    default: false
   build_steps:
-    description: Custom build steps.
+    description: Custom build steps. Requires enable_custom_build as true.
     type: steps
     default: []
   build_args:
@@ -75,10 +79,10 @@ steps:
         docker login -u $DOCKER_USER -p $DOCKER_PASS
   - steps: << parameters.before_steps >>
   - when:
-      condition: << parameters.build_steps >>
+      condition: << parameters.enable_custom_build >>
       steps: << parameters.build_steps >>
   - unless:
-      condition: << parameters.build_steps >>
+      condition: << parameters.enable_custom_build >>
       steps:
         - run:
             name: Build docker images (versioned)
