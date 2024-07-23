@@ -149,7 +149,7 @@ steps:
               find $HOME/.sbt -name "*.lock" | xargs rm | true
               find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm | true
               # delete all jars inside target directories
-              find . -name *.jar -type f -exec rm {} \;
+              find . -type f -name *.jar ! -name *-assembly.jar -exec rm {} \;
               # zip all targets to a single file
               find . -name target -type d -prune -print | zip -r -q -1 -@ ~/targets.zip
 
