@@ -43,7 +43,7 @@ parameters:
   use_sbt_native_client:
     description: "Whether to use sbt thin client"
     type: boolean
-    default: true
+    default: false
   no_output_timeout:
     description: "Time to wait for sbt command to complete without output"
     type: string
