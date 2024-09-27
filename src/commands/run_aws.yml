@@ -32,6 +32,12 @@ parameters:
     description: "Use step type 'deploy' instead of 'run' for this command"
     type: boolean
     default: true
+  no_output_timeout:
+    description: |
+      Elapsed time the command can run without output.
+      The default is 10 minutes and the maximum is governed by the maximum time a job is allowed to run.
+    type: string
+    default: 10m
 
 steps:
   - run:
@@ -52,9 +58,11 @@ steps:
                 exit 0;
               fi
               << parameters.cmd >>
+            no_output_timeout: << parameters.no_output_timeout >>
   - unless:
       condition: << parameters.deploy >>
       steps:
         - run:
             name: << parameters.cmd_name >>
             command: << parameters.cmd >>
+            no_output_timeout: << parameters.no_output_timeout >>

@@ -26,6 +26,12 @@ parameters:
     description: "Slack handles to mention on the failure notification"
     type: string
     default: ''
+  no_output_timeout:
+    description: |
+      Elapsed time the command can run without output.
+      The default is 10 minutes and the maximum is governed by the maximum time a job is allowed to run.
+    type: string
+    default: 10m
 
 
 environment:
@@ -40,6 +46,7 @@ steps:
       cmd_name: AWS deploy command - << parameters.cmd >>
       deploy: true
       cmd: << parameters.cmd >>
+      no_output_timeout: << parameters.no_output_timeout >>
 
   - when:
       condition: << parameters.notify_slack >>
