@@ -44,7 +44,6 @@ parameters:
     default: false
 
 steps:
-
   - restore_cache:
       keys:
         - << parameters.cache_prefix >>-{{ .Branch }}-{{ checksum "build.sbt" }}-{{ .Environment.CIRCLE_SHA1 }}
@@ -140,7 +139,12 @@ steps:
             path: << parameters.store_test_results_path >>
 
   - when:
-      condition: <<parameters.save_cache>>
+      condition:
+        and:
+          - <<parameters.save_cache>>
+          - or:
+              - equal: ["<< pipeline.git.branch >>", "main"]
+              - equal: ["<< pipeline.git.branch >>", "master"]
       steps:
         - run:
             name: CleanCache
