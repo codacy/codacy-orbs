@@ -131,7 +131,7 @@ steps:
                 exit 1
               else
                 NAMESPACE="<<parameters.reset_dev_env_replica_count>>"
-                RELEASES=$(helm ls -n $NAMESPACE -o json | jq -r '.[].name' | grep -v 'ingress\|ragnaros\|codacy-seed')
+                RELEASES=$(helm ls -n $NAMESPACE -o json | jq -r '.[].name' | grep -v 'ingress\|ragnaros\|codacy-seed\|metrics-aggregation-service')
                 for RELEASE in $RELEASES ; do
                   DEPLOYMENTS=$(helm get manifest -n $NAMESPACE $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name' | sort -r)
                   for DEPLOYMENT in $DEPLOYMENTS ; do
