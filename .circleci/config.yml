@@ -103,15 +103,6 @@ workflows:
           requires:
             - pack_and_validate
 
-      - publish_dev:
-          context: CodacyCircleCI
-          requires:
-            - tag_version
-          filters:
-            branches:
-              ignore:
-                - master
-
       - publish_prod:
           context: CodacyCircleCI
           requires:
