@@ -5,4 +5,6 @@ description: >
 machine:
   image: ubuntu-2004:2024.08.1
 
+resource_class: large
+
 working_directory: ~/workdir
