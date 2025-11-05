@@ -27,7 +27,7 @@ parameters:
     description: Version prefix ("v" to tag versions like `v1.0.0`).
   method:
     type: string
-    default: "full"
+    default: "blobless"
     description: Checkout method. Valid options include `blobless` and `full`.
 
 executor: versioning
