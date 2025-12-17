@@ -68,7 +68,7 @@ steps:
       name: Install microk8s and addon dependencies
       command: |
         if ! which snap > /dev/null; then
-          sudo apt-get install snapd; \
+          sudo apt update && sudo apt install snapd; \
         fi
         sudo snap refresh
         sudo apt update && sudo apt install nfs-common -y
