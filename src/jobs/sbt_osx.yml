@@ -60,9 +60,9 @@ steps:
       command: |
         # Pin openjdk version << parameters.openjdk_version >>
         brew install openjdk@<< parameters.openjdk_version >>
-        sudo ln -sfn /usr/local/opt/openjdk@<< parameters.openjdk_version >>/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-<< parameters.openjdk_version >>.jdk
-        echo 'export PATH="/usr/local/opt/openjdk@<< parameters.openjdk_version >>/bin:$PATH"' >> "$HOME/.bash_profile"
-        export CPPFLAGS="-I/usr/local/opt/openjdk@<< parameters.openjdk_version >>/include"
+        sudo ln -sfn /opt/homebrew/opt/opt/openjdk@<< parameters.openjdk_version >>/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-<< parameters.openjdk_version >>.jdk
+        echo 'export PATH="/opt/homebrew/opt/openjdk@<< parameters.openjdk_version >>/bin:$PATH"' >> "$HOME/.bash_profile"
+        export CPPFLAGS="-I/opt/homebrew/opt/openjdk@<< parameters.openjdk_version >>/include"
         source "$HOME/.bash_profile"
         # Install sbt without overriding openjdk
         brew install --ignore-dependencies sbt
