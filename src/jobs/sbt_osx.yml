@@ -62,8 +62,8 @@ steps:
         # Pin openjdk version << parameters.openjdk_version >>
         brew install openjdk@${OJDK_VERSION}
         sudo ln -sfn /usr/local/opt/openjdk@${OJDK_VERSION}/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-${OJDK_VERSION}.jdk
-        echo 'export PATH="/usr/local/opt/openjdk@${OJDK_VERSION}/bin:$PATH"' >> /Users/distiller/.bash_profile
-        export CPPFLAGS="-I/usr/local/opt/openjdk@${OJDK_VERSION}/include"
+        echo "export PATH=\"/usr/local/opt/openjdk@${OJDK_VERSION}/bin:$PATH\"" >> $BASH_ENV
+        echo "export CPPFLAGS=\"-I/usr/local/opt/openjdk@${OJDK_VERSION}/include\"" >> $BASH_ENV
         # Install sbt without overriding openjdk
         brew install --ignore-dependencies sbt
   - run:
