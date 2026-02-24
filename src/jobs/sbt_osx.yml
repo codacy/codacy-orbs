@@ -56,14 +56,14 @@ steps:
   - run:
       name: Download and install sbt
       environment:
-        OJDK_VERSION: << parameters.openjdk_version >>
         HOMEBREW_NO_AUTO_UPDATE: 1
       command: |
         # Pin openjdk version << parameters.openjdk_version >>
-        brew install openjdk@${OJDK_VERSION}
-        sudo ln -sfn /usr/local/opt/openjdk@${OJDK_VERSION}/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-${OJDK_VERSION}.jdk
-        echo 'export PATH="/usr/local/opt/openjdk@${OJDK_VERSION}/bin:$PATH"' >> /Users/distiller/.bash_profile
-        export CPPFLAGS="-I/usr/local/opt/openjdk@${OJDK_VERSION}/include"
+        brew install openjdk@<< parameters.openjdk_version >>
+        sudo ln -sfn /opt/homebrew/opt/opt/openjdk@<< parameters.openjdk_version >>/libexec/openjdk.jdk /Library/Java/JavaVirtualMachines/openjdk-<< parameters.openjdk_version >>.jdk
+        echo 'export PATH="/opt/homebrew/opt/openjdk@<< parameters.openjdk_version >>/bin:$PATH"' >> "$HOME/.bash_profile"
+        export CPPFLAGS="-I/opt/homebrew/opt/openjdk@<< parameters.openjdk_version >>/include"
+        source "$HOME/.bash_profile"
         # Install sbt without overriding openjdk
         brew install --ignore-dependencies sbt
   - run:
