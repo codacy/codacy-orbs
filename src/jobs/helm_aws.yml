@@ -118,6 +118,7 @@ steps:
             cmd_name: Reset the replica count of each deployment for the specified env
             deploy: false
             cmd: |
+              declare -a error_deployments
               if ! [[ -z "<< parameters.scale_down_time_limit >>" ]]; then
                 current_timestamp=$(date +%s)
                 time_limit_timestamp=$(date -d "<< parameters.scale_down_time_limit >>" +%s)
@@ -135,6 +136,7 @@ steps:
                 for RELEASE in $RELEASES ; do
                   DEPLOYMENTS=$(helm get manifest -n $NAMESPACE $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name' | sort -r)
                   for DEPLOYMENT in $DEPLOYMENTS ; do
+                    hasErrors=false
                     if [ << parameters.scale_environment_down >> = true ]; then
                       REPLICA_COUNT=0
                     else
@@ -142,8 +144,14 @@ steps:
                     fi
                     kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n $NAMESPACE
                     if [[ << parameters.wait_for_pods_ready >> = true ]]; then
-                      kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE --timeout << parameters.wait_for_pods_ready_timeout >>
+                      kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE --timeout << parameters.wait_for_pods_ready_timeout >> || hasErrors=true
+                      if [[ hasErrors = true ]]; then
+                        error_deployments+=("$DEPLOYMENT")
+                      fi
                     fi
                   done
+                  if [[ ${#error_deployments[@]} != 0 ]]; then
+                    echo "The following deployments failed to be scaled up: " + ${files[*]} 
+                    exit 1
                 done
               fi
