@@ -151,7 +151,7 @@ steps:
                     fi
                   done
                   if [[ ${#error_deployments[@]} != 0 ]]; then
-                    echo "The following deployments failed to be scaled up: " + ${files[*]} 
+                    echo "The following deployments failed to be scaled up: " + ${files[*]}
                     exit 1
                 done
               fi
