@@ -19,6 +19,10 @@ parameters:
     description: If true then force mirroring the image even if it already exists in ECR
     type: boolean
     default: false
+  overwrite_only_existing:
+    description: If true then overwrite the image only when the target tag already exists in ECR. The job fails if the tag is missing.
+    type: boolean
+    default: false
   aws_profile:
     description: The AWS profile to be used
     type: string
@@ -67,7 +71,18 @@ steps:
 
         echo "Mirroring ${SRC} to ${ECR_URL}/${MIRROR}..."
         REPO_DATA=$(aws ecr describe-images --repository-name=${MIRROR_NAME} --image-ids=imageTag=${MIRROR_TAG} ||: )
-        if << parameters.force>> || [[ -z $REPO_DATA ]] ; then
+        SHOULD_MIRROR=false
+        if [[ -z $REPO_DATA ]] ; then
+          if << parameters.overwrite_only_existing >> ; then
+            echo "Mirror target ${MIRROR} does not exist in ECR and overwrite_only_existing is enabled."
+            exit 1
+          fi
+          SHOULD_MIRROR=true
+        elif << parameters.force >> || << parameters.overwrite_only_existing >> ; then
+          SHOULD_MIRROR=true
+        fi
+
+        if [[ "${SHOULD_MIRROR}" == "true" ]] ; then
           docker pull ${SRC}
           docker tag  ${SRC} ${ECR_URL}/${MIRROR}
           docker push ${ECR_URL}/${MIRROR}
