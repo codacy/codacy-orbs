@@ -20,7 +20,7 @@ parameters:
     type: boolean
     default: false
   overwrite_only_existing:
-    description: If true then overwrite the image only when the target tag already exists in ECR. The job fails if the tag is missing. After overwrite, the previous image digest is deleted from ECR.
+    description: If true then overwrite the image only when the target tag already exists in ECR. The job fails if the tag is missing. After overwrite, untagged images in the repository are deleted from ECR.
     type: boolean
     default: false
   aws_profile:
@@ -77,14 +77,21 @@ steps:
           docker pull ${SRC}
           docker tag  ${SRC} ${ECR_URL}/${MIRROR}
           docker push ${ECR_URL}/${MIRROR}
-          if << parameters.overwrite_only_existing >> && [[ -n "${OLD_IMAGE_DIGEST}" ]]; then
-            NEW_IMAGE_DIGEST=$(aws ecr describe-images --repository-name=${MIRROR_NAME} --image-ids=imageTag=${MIRROR_TAG} --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)
-            [[ -z "${NEW_IMAGE_DIGEST}" || "${NEW_IMAGE_DIGEST}" == "None" ]] && NEW_IMAGE_DIGEST=""
-            if [[ -n "${NEW_IMAGE_DIGEST}" ]] && [[ "${OLD_IMAGE_DIGEST}" != "${NEW_IMAGE_DIGEST}" ]]; then
-              echo "Deleting previous untagged image ${OLD_IMAGE_DIGEST} from ECR..."
-              aws ecr batch-delete-image --repository-name=${MIRROR_NAME} --image-ids imageDigest=${OLD_IMAGE_DIGEST}
+          if << parameters.overwrite_only_existing >>; then
+            UNTAGGED_DIGESTS=$(aws ecr list-images \
+              --repository-name="${MIRROR_NAME}" \
+              --filter tagStatus=UNTAGGED \
+              --query 'imageIds[*].imageDigest' \
+              --output text 2>/dev/null || true)
+            if [[ -n "${UNTAGGED_DIGESTS}" && "${UNTAGGED_DIGESTS}" != "None" ]]; then
+              echo "Deleting untagged images from ${MIRROR_NAME}..."
+              IMAGE_IDS=()
+              for digest in ${UNTAGGED_DIGESTS}; do
+                IMAGE_IDS+=("imageDigest=${digest}")
+              done
+              aws ecr batch-delete-image --repository-name="${MIRROR_NAME}" --image-ids "${IMAGE_IDS[@]}"
             else
-              echo "Image digest unchanged (${OLD_IMAGE_DIGEST}); skipping deletion."
+              echo "No untagged images to delete."
             fi
           fi
         else
