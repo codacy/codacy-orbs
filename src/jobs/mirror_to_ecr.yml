@@ -20,7 +20,7 @@ parameters:
     type: boolean
     default: false
   overwrite_only_existing:
-    description: If true then overwrite the image only when the target tag already exists in ECR. The job fails if the tag is missing.
+    description: If true then overwrite the image only when the target tag already exists in ECR. The job fails if the tag is missing. After overwrite, untagged images in the repository are deleted from ECR.
     type: boolean
     default: false
   aws_profile:
@@ -45,13 +45,13 @@ steps:
       cmd_name: Mirroring image to ECR repository
       deploy: true
       cmd: |
-        echo "Loging in to Dockerhub..."
+        echo "Logging in to Dockerhub..."
         echo $DOCKER_PASS | docker login -u "$DOCKER_USER" --password-stdin
 
         export ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
         export ECR_URL=${ACCOUNT_ID}.dkr.ecr.<< parameters.region >>.amazonaws.com
         export ECR_PASSWORD=$(aws ecr get-login-password --region << parameters.region >>)
-        echo "Loging in to ECR: ${ECR_URL}"
+        echo "Logging in to ECR: ${ECR_URL}"
         echo ${ECR_PASSWORD} | docker login -u AWS --password-stdin ${ECR_URL}
 
         SRC_NAME="<< parameters.source_name >>"
@@ -59,33 +59,41 @@ steps:
         SRC="${SRC_NAME}:${SRC_TAG}"
 
         MIRROR_NAME="<< parameters.mirror_name >>"
-        if [[ -z ${MIRROR_NAME} ]] ; then
-          MIRROR_NAME="${SRC_NAME}"
-        fi
-
+        MIRROR_NAME="${MIRROR_NAME:-${SRC_NAME}}"
         MIRROR_TAG="<< parameters.mirror_tag >>"
-        if [[ -z ${MIRROR_TAG} ]] ; then
-          MIRROR_TAG="${SRC_TAG}"
-        fi
+        MIRROR_TAG="${MIRROR_TAG:-${SRC_TAG}}"
         MIRROR="${MIRROR_NAME}:${MIRROR_TAG}"
 
         echo "Mirroring ${SRC} to ${ECR_URL}/${MIRROR}..."
-        REPO_DATA=$(aws ecr describe-images --repository-name=${MIRROR_NAME} --image-ids=imageTag=${MIRROR_TAG} ||: )
-        SHOULD_MIRROR=false
-        if [[ -z $REPO_DATA ]] ; then
-          if << parameters.overwrite_only_existing >> ; then
-            echo "Mirror target ${MIRROR} does not exist in ECR and overwrite_only_existing is enabled."
-            exit 1
-          fi
-          SHOULD_MIRROR=true
-        elif << parameters.force >> || << parameters.overwrite_only_existing >> ; then
-          SHOULD_MIRROR=true
+        OLD_IMAGE_DIGEST=$(aws ecr describe-images --repository-name="${MIRROR_NAME}" --image-ids=imageTag="${MIRROR_TAG}" --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)
+        [[ -z "${OLD_IMAGE_DIGEST}" || "${OLD_IMAGE_DIGEST}" == "None" ]] && OLD_IMAGE_DIGEST=""
+
+        if << parameters.overwrite_only_existing >> && [[ -z "${OLD_IMAGE_DIGEST}" ]]; then
+          echo "Mirror target ${MIRROR} does not exist in ECR and overwrite_only_existing is enabled."
+          exit 1
         fi
 
-        if [[ "${SHOULD_MIRROR}" == "true" ]] ; then
+        if [[ -z "${OLD_IMAGE_DIGEST}" ]] || << parameters.force >> || << parameters.overwrite_only_existing >>; then
           docker pull ${SRC}
           docker tag  ${SRC} ${ECR_URL}/${MIRROR}
           docker push ${ECR_URL}/${MIRROR}
+          if << parameters.overwrite_only_existing >>; then
+            UNTAGGED_DIGESTS=$(aws ecr list-images \
+              --repository-name="${MIRROR_NAME}" \
+              --filter tagStatus=UNTAGGED \
+              --query 'imageIds[*].imageDigest' \
+              --output text 2>/dev/null || true)
+            if [[ -n "${UNTAGGED_DIGESTS}" && "${UNTAGGED_DIGESTS}" != "None" ]]; then
+              echo "Deleting untagged images from ${MIRROR_NAME}..."
+              IMAGE_IDS=()
+              for digest in ${UNTAGGED_DIGESTS}; do
+                IMAGE_IDS+=("imageDigest=${digest}")
+              done
+              aws ecr batch-delete-image --repository-name="${MIRROR_NAME}" --image-ids "${IMAGE_IDS[@]}"
+            else
+              echo "No untagged images to delete."
+            fi
+          fi
         else
           echo "${MIRROR} image is already in ECR"
         fi
