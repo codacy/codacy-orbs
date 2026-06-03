@@ -65,7 +65,7 @@ steps:
         MIRROR="${MIRROR_NAME}:${MIRROR_TAG}"
 
         echo "Mirroring ${SRC} to ${ECR_URL}/${MIRROR}..."
-        OLD_IMAGE_DIGEST=$(aws ecr describe-images --repository-name=${MIRROR_NAME} --image-ids=imageTag=${MIRROR_TAG} --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)
+        OLD_IMAGE_DIGEST=$(aws ecr describe-images --repository-name="${MIRROR_NAME}" --image-ids=imageTag="${MIRROR_TAG}" --query 'imageDetails[0].imageDigest' --output text 2>/dev/null || true)
         [[ -z "${OLD_IMAGE_DIGEST}" || "${OLD_IMAGE_DIGEST}" == "None" ]] && OLD_IMAGE_DIGEST=""
 
         if << parameters.overwrite_only_existing >> && [[ -z "${OLD_IMAGE_DIGEST}" ]]; then
