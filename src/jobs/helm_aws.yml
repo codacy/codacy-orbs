@@ -136,11 +136,13 @@ steps:
                 for RELEASE in $RELEASES ; do
                   DEPLOYMENTS=$(helm get manifest -n $NAMESPACE $RELEASE | yq eval -o json | jq -r '. | select(.kind == "Deployment") | .metadata.name' | sort -r)
                   for DEPLOYMENT in $DEPLOYMENTS ; do
+                    echo "Targeting deployment '$DEPLOYMENT' (release '$RELEASE', namespace '$NAMESPACE')..."
                     if [ << parameters.scale_environment_down >> = true ]; then
                       REPLICA_COUNT=0
                     else
                       REPLICA_COUNT=$(helm get manifest -n $NAMESPACE $RELEASE | yq eval -o json | jq -r ". | select( (.kind == \"Deployment\") and (.metadata.name ==\"$DEPLOYMENT\") ) | .spec.replicas" )
                     fi
+                    echo "Scaling deployment '$DEPLOYMENT' to $REPLICA_COUNT replica(s)..."
                     kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n $NAMESPACE
                     if [[ << parameters.wait_for_pods_ready >> = true ]]; then
                       kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE --timeout << parameters.wait_for_pods_ready_timeout >> || error_deployments+=("$DEPLOYMENT")
