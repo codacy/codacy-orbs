@@ -41,6 +41,14 @@ steps:
       command: /bin/git-version --dev-branch "<<parameters.dev_branch>>" --release-branch "<<parameters.release_branch>>" --version-prefix "<<parameters.version_prefix>>" > .version
 
   - run:
+      name: Sanitize version
+      # git-version emits <base>-<branch>.<n>.sha.<shortsha> on non-release branches.
+      # If the short sha happens to be all-numeric with a leading zero (e.g. sha.0238954244),
+      # it is an invalid SemVer prerelease identifier and helm rejects the chart version.
+      # Prefix such shas with "g" (git-describe convention) to keep the identifier alphanumeric.
+      command: sed -E -i 's/\.sha\.(0[0-9]+)$/.sha.g\1/' .version
+
+  - run:
       name: Current version
       command: cat .version
 
