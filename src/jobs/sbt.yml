@@ -90,9 +90,9 @@ steps:
               OJDK_VERSION: << parameters.openjdk_version >>
             command: |
               JVM_DIR="/usr/lib/jvm/java-${OJDK_VERSION}-openjdk-amd64"
-              # machine images already carry 8, 17 and 21; apt would only upgrade them
-              if [ -d "$JVM_DIR" ]; then
-                echo "openjdk-${OJDK_VERSION} already present at ${JVM_DIR}, skipping install"
+              # skip only when the exact alternative the --set below needs is already registered
+              if update-alternatives --list java 2>/dev/null | grep -qx "${JVM_DIR}/bin/java"; then
+                echo "openjdk-${OJDK_VERSION} already registered at ${JVM_DIR}, skipping install"
               else
                 sudo apt update
                 sudo apt install -y "openjdk-${OJDK_VERSION}-jre"
