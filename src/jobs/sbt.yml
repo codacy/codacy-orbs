@@ -89,9 +89,15 @@ steps:
             environment:
               OJDK_VERSION: << parameters.openjdk_version >>
             command: |
-              sudo apt update
-              sudo apt install openjdk-${OJDK_VERSION}-jre
-              sudo update-alternatives --set java /usr/lib/jvm/java-${OJDK_VERSION}-openjdk-amd64/bin/java
+              JVM_DIR="/usr/lib/jvm/java-${OJDK_VERSION}-openjdk-amd64"
+              # machine images already carry 8, 17 and 21; apt would only upgrade them
+              if [ -d "$JVM_DIR" ]; then
+                echo "openjdk-${OJDK_VERSION} already present at ${JVM_DIR}, skipping install"
+              else
+                sudo apt update
+                sudo apt install -y "openjdk-${OJDK_VERSION}-jre"
+              fi
+              sudo update-alternatives --set java "${JVM_DIR}/bin/java"
   - when:
       condition: << parameters.install_sbt_version >>
       steps:
