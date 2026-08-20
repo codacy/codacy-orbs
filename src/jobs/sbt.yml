@@ -89,9 +89,15 @@ steps:
             environment:
               OJDK_VERSION: << parameters.openjdk_version >>
             command: |
-              sudo apt update
-              sudo apt install openjdk-${OJDK_VERSION}-jre
-              sudo update-alternatives --set java /usr/lib/jvm/java-${OJDK_VERSION}-openjdk-amd64/bin/java
+              JVM_DIR="/usr/lib/jvm/java-${OJDK_VERSION}-openjdk-amd64"
+              # skip only when the exact alternative the --set below needs is already registered
+              if update-alternatives --list java 2>/dev/null | grep -qx "${JVM_DIR}/bin/java"; then
+                echo "openjdk-${OJDK_VERSION} already registered at ${JVM_DIR}, skipping install"
+              else
+                sudo apt update
+                sudo apt install -y "openjdk-${OJDK_VERSION}-jre"
+              fi
+              sudo update-alternatives --set java "${JVM_DIR}/bin/java"
   - when:
       condition: << parameters.install_sbt_version >>
       steps:
