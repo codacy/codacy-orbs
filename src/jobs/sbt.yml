@@ -68,7 +68,8 @@ parameters:
   docker_scout_version:
     description: "Version of the docker scout plugin to use"
     type: string
-    default: "0.13.1"
+    # 0.13.1 cannot re-read its own /tmp/docker-scout cache on the 2024.08 machine image
+    default: "1.19.0"
   save_cache:
     description: "Whether to save the cache or not at the end of the job"
     type: boolean
