@@ -96,7 +96,16 @@ steps:
                 echo "openjdk-${OJDK_VERSION} already registered at ${JVM_DIR}, skipping install"
               else
                 sudo apt update
-                sudo apt install -y "openjdk-${OJDK_VERSION}-jre"
+                if apt-cache show "openjdk-${OJDK_VERSION}-jre" > /dev/null 2>&1; then
+                  sudo apt install -y "openjdk-${OJDK_VERSION}-jre"
+                else
+                  # not packaged for this Ubuntu release (e.g. newer JDKs): install Eclipse Temurin at the same path
+                  curl -fsSL "https://api.adoptium.net/v3/binary/latest/${OJDK_VERSION}/ga/linux/x64/jdk/hotspot/normal/eclipse" -o /tmp/temurin.tar.gz
+                  sudo mkdir -p "${JVM_DIR}"
+                  sudo tar -xzf /tmp/temurin.tar.gz -C "${JVM_DIR}" --strip-components=1
+                  rm -f /tmp/temurin.tar.gz
+                  sudo update-alternatives --install /usr/bin/java java "${JVM_DIR}/bin/java" 1
+                fi
               fi
               sudo update-alternatives --set java "${JVM_DIR}/bin/java"
   - when:
