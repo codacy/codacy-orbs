@@ -3,6 +3,6 @@ description: >
   https://github.com/codacy/git-version
 
 docker:
-  - image: codacy/git-version:latest
+  - image: codacy/git-version:2.8.8
 
 working_directory: ~/workdir
