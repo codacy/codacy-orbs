@@ -39,8 +39,8 @@ steps:
         export GITHUB_REF="refs/heads/${CIRCLE_BRANCH}"
         export GITHUB_RUN_ID="${CIRCLE_WORKFLOW_ID}"
         export GITHUB_API_URL="https://api.github.com"
-        GITHUB_OUTPUT="$(mktemp)"
-        export GITHUB_OUTPUT
+        # the plugin appends the submission id/url here; print them in the job log
+        export GITHUB_OUTPUT=/dev/stdout
 
         INPUT=$(jq -cn \
           --arg modules "$MODULES_IGNORE" \
