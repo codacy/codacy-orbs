@@ -31,15 +31,16 @@ steps:
         MODULES_IGNORE: << parameters.modules_ignore >>
         CORRELATOR: << parameters.correlator >>
       command: |
-        # Mimic the GitHub Actions environment expected by the plugin
+        # Mimic the GitHub Actions environment the plugin requires (it checks these before submitting).
+        # GITHUB_SERVER_URL is left unset on purpose: the plugin would otherwise link the snapshot to a non-existent Actions run.
+        export GITHUB_WORKSPACE="$(pwd)"
         export GITHUB_REPOSITORY="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
         export GITHUB_SHA="${CIRCLE_SHA1}"
         export GITHUB_REF="refs/heads/${CIRCLE_BRANCH}"
-        export GITHUB_JOB="${CIRCLE_JOB}"
         export GITHUB_RUN_ID="${CIRCLE_WORKFLOW_ID}"
-        export GITHUB_WORKFLOW="${CIRCLE_WORKFLOW_ID}"
         export GITHUB_API_URL="https://api.github.com"
-        export GITHUB_SERVER_URL="https://github.com"
+        GITHUB_OUTPUT="$(mktemp)"
+        export GITHUB_OUTPUT
 
         INPUT=$(jq -cn \
           --arg modules "$MODULES_IGNORE" \
