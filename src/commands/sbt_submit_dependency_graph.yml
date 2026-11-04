@@ -1,0 +1,48 @@
+description: >
+  Submit the sbt dependency graph to the GitHub Dependency Submission API
+  (CircleCI equivalent of scalacenter/sbt-dependency-submission). Meant to be used in the
+  steps of the sbt job so private dependencies resolve with the job's AWS credentials.
+  Requires a GITHUB_TOKEN env var with permission to write the repository dependency graph.
+
+parameters:
+  plugin_version:
+    description: "Version of the sbt-github-dependency-submission plugin"
+    type: string
+    default: "3.2.3"
+  configs_ignore:
+    description: "Space-separated sbt configurations to leave out of the graph"
+    type: string
+    default: "test test-internal scala-doc-tool scala-tool"
+  modules_ignore:
+    description: "Space-separated sbt modules to leave out of the graph"
+    type: string
+    default: ""
+  correlator:
+    description: "Identifier that distinguishes snapshots of the same repository"
+    type: string
+    default: "circleci_submit_dependency_graph"
+
+steps:
+  - run:
+      name: Submit sbt dependency graph
+      environment:
+        PLUGIN_VERSION: << parameters.plugin_version >>
+        CONFIGS_IGNORE: << parameters.configs_ignore >>
+        MODULES_IGNORE: << parameters.modules_ignore >>
+        CORRELATOR: << parameters.correlator >>
+      command: |
+        # Mimic the GitHub Actions environment expected by the plugin
+        export GITHUB_REPOSITORY="${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}"
+        export GITHUB_SHA="${CIRCLE_SHA1}"
+        export GITHUB_REF="refs/heads/${CIRCLE_BRANCH}"
+        export GITHUB_JOB="${CIRCLE_JOB}"
+        export GITHUB_RUN_ID="${CIRCLE_WORKFLOW_ID}"
+        export GITHUB_WORKFLOW="${CIRCLE_WORKFLOW_ID}"
+        export GITHUB_API_URL="https://api.github.com"
+        export GITHUB_SERVER_URL="https://github.com"
+
+        to_json_array() { printf '%s' "$1" | tr -s ' ' '\n' | sed '/^$/d' | sed 's/.*/"&"/' | paste -sd, - ; }
+        INPUT="{\"ignoredModules\":[$(to_json_array "$MODULES_IGNORE")],\"ignoredConfigs\":[$(to_json_array "$CONFIGS_IGNORE")],\"onResolveFailure\":\"error\",\"correlator\":\"${CORRELATOR}\"}"
+
+        echo "addSbtPlugin(\"ch.epfl.scala\" % \"sbt-github-dependency-submission\" % \"${PLUGIN_VERSION}\")" > project/github-dependency-submission.sbt
+        sbt --batch "githubGenerateSnapshot ${INPUT}; githubSubmitSnapshot"
