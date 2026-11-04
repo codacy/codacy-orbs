@@ -1,0 +1,42 @@
+description: >
+  Formats the Scala files changed in the branch with scalafmt and pushes the result.
+  CircleCI replacement for the lolgab/scalafmt GitHub action.
+
+executor:
+  name: jdk
+  tag: << parameters.openjdk_tag >>
+
+parameters:
+  openjdk_tag:
+    description: "CircleCI OpenJDK image version tag, from https://hub.docker.com/r/cimg/openjdk/tags"
+    type: string
+    default: "17.0"
+  scalafmt_version:
+    description: "Version of the scalafmt launcher. The version in the config file is resolved dynamically by it"
+    type: string
+    default: "3.11.5"
+  config_path:
+    description: "Path to the scalafmt config file"
+    type: string
+    default: ".scalafmt.conf"
+  base_branch:
+    description: "Branch the changed files are computed against. The job does nothing when running on it"
+    type: string
+    default: "master"
+  push_changes:
+    description: "Commit and push the formatted files. When false the job fails if any file needs formatting"
+    type: boolean
+    default: true
+  github_token:
+    description: "Name of the env var holding the GitHub token used to push the changes"
+    type: env_var_name
+    default: GITHUB_TOKEN
+
+steps:
+  - checkout
+  - scalafmt:
+      scalafmt_version: << parameters.scalafmt_version >>
+      config_path: << parameters.config_path >>
+      base_branch: << parameters.base_branch >>
+      push_changes: << parameters.push_changes >>
+      github_token: << parameters.github_token >>
