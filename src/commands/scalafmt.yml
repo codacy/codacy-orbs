@@ -1,0 +1,102 @@
+description: >
+  Run scalafmt on the Scala files changed in the current branch compared to the base branch,
+  and push the result back as a commit (CircleCI equivalent of the lolgab/scalafmt GitHub action).
+  Needs a JVM, git and curl on the executor, and an env var holding a GitHub token that can push
+  to the repository. Pushing triggers a new pipeline, which finds nothing left to format.
+
+parameters:
+  scalafmt_version:
+    description: "Version of the scalafmt launcher. The version in the config file is resolved dynamically by it"
+    type: string
+    default: "3.11.5"
+  coursier_version:
+    description: "Version of the coursier launcher used to install scalafmt"
+    type: string
+    default: "2.1.24"
+  config_path:
+    description: "Path to the scalafmt config file"
+    type: string
+    default: ".scalafmt.conf"
+  base_branch:
+    description: "Branch the changed files are computed against. The step is skipped when running on it"
+    type: string
+    default: "master"
+  files:
+    description: "Space-separated git pathspecs of the files to format"
+    type: string
+    default: "*.scala *.sbt *.sc *.mill"
+  push_changes:
+    description: "Commit and push the formatted files. When false the step fails if any file needs formatting"
+    type: boolean
+    default: true
+  commit_message:
+    description: "Commit message of the formatting changes"
+    type: string
+    default: "style: Run Scalafmt"
+  user_name:
+    description: "Git username used to commit the changes"
+    type: string
+    default: "codacy-ci"
+  user_email:
+    description: "Git email used to commit the changes"
+    type: string
+    default: "ci@codacy.com"
+  github_token:
+    description: "Name of the env var holding the GitHub token used to push the changes"
+    type: env_var_name
+    default: GITHUB_TOKEN
+
+steps:
+  - run:
+      name: Run scalafmt on changed files
+      environment:
+        SCALAFMT_VERSION: << parameters.scalafmt_version >>
+        COURSIER_VERSION: << parameters.coursier_version >>
+        SCALAFMT_CONFIG: << parameters.config_path >>
+        BASE_BRANCH: << parameters.base_branch >>
+        FILES: << parameters.files >>
+        PUSH_CHANGES: << parameters.push_changes >>
+        COMMIT_MESSAGE: << parameters.commit_message >>
+        GIT_USER_NAME: << parameters.user_name >>
+        GIT_USER_EMAIL: << parameters.user_email >>
+        TOKEN_VAR: << parameters.github_token >>
+      command: |
+        if [ "$CIRCLE_BRANCH" = "$BASE_BRANCH" ]; then
+          echo "On the base branch ${BASE_BRANCH}, skipping"
+          exit 0
+        fi
+        if [ -n "$CIRCLE_PR_NUMBER" ]; then
+          echo "Pull request from a fork, cannot push to its branch"
+          exit 1
+        fi
+
+        git fetch --quiet origin "$BASE_BRANCH"
+        # shellcheck disable=SC2086
+        CHANGED_FILES=$(git diff --name-only --diff-filter=d "$(git merge-base "origin/${BASE_BRANCH}" HEAD)" HEAD -- $FILES)
+        if [ -z "$CHANGED_FILES" ]; then
+          echo "No files to format"
+          exit 0
+        fi
+
+        mkdir -p "$HOME/.local/bin"
+        curl -fsSL "https://github.com/coursier/coursier/releases/download/v${COURSIER_VERSION}/cs-x86_64-pc-linux.gz" | gzip -d > "$HOME/.local/bin/cs"
+        chmod +x "$HOME/.local/bin/cs"
+        "$HOME/.local/bin/cs" install --install-dir "$HOME/.local/bin" "scalafmt:${SCALAFMT_VERSION}"
+
+        echo "$CHANGED_FILES" | tr '\n' '\0' | xargs -0 "$HOME/.local/bin/scalafmt" --config "$SCALAFMT_CONFIG"
+
+        if git diff --quiet; then
+          echo "All changed files are already formatted"
+          exit 0
+        fi
+
+        if [ "$PUSH_CHANGES" != "true" ]; then
+          git diff --stat
+          echo "Some files need formatting, run scalafmt and commit the result"
+          exit 1
+        fi
+
+        git config user.name "$GIT_USER_NAME"
+        git config user.email "$GIT_USER_EMAIL"
+        git commit --all --message "$COMMIT_MESSAGE"
+        git push "https://x-access-token:${!TOKEN_VAR}@github.com/${CIRCLE_PROJECT_USERNAME}/${CIRCLE_PROJECT_REPONAME}.git" "HEAD:refs/heads/${CIRCLE_BRANCH}"
