@@ -18,9 +18,9 @@ parameters:
     type: string
     default: ".scalafmt.conf"
   base_branch:
-    description: "Branch the changed files are computed against. The step is skipped when running on it"
+    description: "Branch the changed files are computed against. The step is skipped when running on it. Defaults to the default branch of the repository"
     type: string
-    default: "master"
+    default: ""
   files:
     description: "Space-separated git pathspecs of the files to format"
     type: string
@@ -61,6 +61,15 @@ steps:
         GIT_USER_EMAIL: << parameters.user_email >>
         TOKEN_VAR: << parameters.github_token >>
       command: |
+        if [ -z "$BASE_BRANCH" ]; then
+          BASE_BRANCH=$(git ls-remote --symref origin HEAD | awk '/^ref:/ { sub("refs/heads/", "", $2); print $2 }')
+          if [ -z "$BASE_BRANCH" ]; then
+            echo "Could not detect the default branch, set the base_branch parameter"
+            exit 1
+          fi
+          echo "Detected base branch ${BASE_BRANCH}"
+        fi
+
         if [ "$CIRCLE_BRANCH" = "$BASE_BRANCH" ]; then
           echo "On the base branch ${BASE_BRANCH}, skipping"
           exit 0
