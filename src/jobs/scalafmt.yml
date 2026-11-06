@@ -20,9 +20,9 @@ parameters:
     type: string
     default: ".scalafmt.conf"
   base_branch:
-    description: "Branch the changed files are computed against. The job does nothing when running on it"
+    description: "Branch the changed files are computed against. The job does nothing when running on it. Defaults to the default branch of the repository"
     type: string
-    default: "master"
+    default: ""
   push_changes:
     description: "Commit and push the formatted files. When false the job fails if any file needs formatting"
     type: boolean
