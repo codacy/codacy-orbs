@@ -144,6 +144,11 @@ steps:
                     fi
                     echo "Scaling deployment '$DEPLOYMENT' to $REPLICA_COUNT replica(s)..."
                     kubectl scale --replicas=$REPLICA_COUNT deployment/$DEPLOYMENT -n $NAMESPACE
+                    if [ << parameters.scale_environment_down >> = true ]; then
+                      # Until its pod is gone, a scaler (e.g. listener-github-linear-scaler) can scale the next deployment back up
+                      SELECTOR=$(kubectl get deployment/$DEPLOYMENT -n $NAMESPACE -o json | jq -r '.spec.selector.matchLabels | to_entries | map("\(.key)=\(.value)") | join(",")')
+                      kubectl wait --for=delete pod -l "$SELECTOR" -n $NAMESPACE --timeout=60s || true
+                    fi
                     if [[ << parameters.wait_for_pods_ready >> = true ]]; then
                       kubectl rollout status deployment/$DEPLOYMENT -n $NAMESPACE --timeout << parameters.wait_for_pods_ready_timeout >> || error_deployments+=("$DEPLOYMENT")
                     fi
