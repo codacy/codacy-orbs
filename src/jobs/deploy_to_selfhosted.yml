@@ -71,6 +71,8 @@ steps:
         sed -i "s/<--- codacy-db-username --->/$username/g; s/<--- codacy-db-password --->/$password/g; s/<--- codacy-db-host --->/$host/g; s/<--- codacy-db-port --->/$port/g;" values-production.yaml
   - run_skip_ssh:
       cmd_name: Install component
+      # Longer than helm's --timeout below, so helm gives up first and --atomic rolls the release back
+      no_output_timeout: "35m"
       cmd: |
         if [ -z "<< parameters.release_name >>" ] ; then
           RELEASE_NAME="<< parameters.chart_name >>"
