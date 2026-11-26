@@ -80,7 +80,7 @@ steps:
         helm upgrade --install $RELEASE_NAME codacy-<<parameters.helm_channel>>/<<parameters.chart_name>> \
         --devel \
         --atomic \
-        --timeout=600s \
+        --timeout=1800s \
         --namespace codacy-<<parameters.environment>> \
         -f values.yaml \
         -f values-production.yaml \
