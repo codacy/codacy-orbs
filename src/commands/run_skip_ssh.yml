@@ -10,10 +10,15 @@ parameters:
   cmd:
     description: "Command to run"
     type: string
+  no_output_timeout:
+    description: "How long the command may run without printing anything before CircleCI stops it"
+    type: string
+    default: "10m"
 
 steps:
   - run:
       name: << parameters.cmd_name >>
+      no_output_timeout: << parameters.no_output_timeout >>
       command: |
         if [[ $(netstat -tnlp | grep -F 'circleci-agent') ]] ; then
           echo "Command skipped during 'Rerun job with SSH'"
